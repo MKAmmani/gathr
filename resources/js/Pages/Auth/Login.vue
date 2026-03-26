@@ -1,10 +1,4 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
@@ -30,109 +24,67 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="PaySync Login" />
-        <div class="">
-            <div class="">
-                <div class="text-center mb-6">
-                    <div class="mx-auto w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">PS</div>
-                    <h2 class="text-2xl font-bold text-gray-800">Login to PaySync</h2>
-                    <p class="text-sm text-gray-600">Secure Salary Payment System</p>
+     <body class="text-on-surface antialiased bg-white">
+        <main class="max-w-md mx-auto px-10 pt-24 pb-12">
+            <!-- Logo and Intro -->
+            <section class="text-center mb-10">
+                <h2 class="headline-font text-[28px] font-semibold text-[#333333] leading-tight tracking-tight">
+                    Welcome to
+                </h2>
+                <div class="mt-4 mb-2">
+                    <h1 class="logo-font text-2xl font-extrabold tracking-tight text-[#333333]">
+                        GATH<span class="text-[#00A2E8]">R</span>
+                    </h1>
                 </div>
-                <form class="space-y-4" @submit.prevent="submit">
+                <p class="font-body text-[#757575] text-[15px] font-normal tracking-tight">Group payment never been
+                    easier</p>
+            </section>
+            <!-- Registration Form -->
+            <form class="space-y-6">
+                <!-- Email Field -->
+                <div class="space-y-2">
+                    <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Email</label>
+                    <input
+                        class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-[#333333]"
+                        placeholder="Vinciman@gmail.com" type="email" />
+                </div>
+                <!-- Password Field -->
+                <div class="space-y-2">
+                    <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Password</label>
                     <div class="relative">
-                        <input type="email" v-model="form.email" placeholder="Enter your email" class="border border-gray-300 rounded-md px-3 py-2 w-full pl-10 focus:outline-none focus:ring-1 focus:ring-gray-300" required>
-                        <i class="absolute left-3 top-3 text-gray-500">✉️</i>
+                        <input
+                            class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-xl tracking-widest"
+                            placeholder="● ● ● ● ● ● ● ●" type="password" />
                     </div>
-                    <div class="relative">
-                        <input type="password" v-model="form.password" placeholder="Enter your password" class="border border-gray-300 rounded-md px-3 py-2 w-full pl-10 focus:outline-none focus:ring-1 focus:ring-gray-300" required>
-                        <i class="absolute right-3 top-3 text-gray-500">👁️‍🗨️</i>
-                    </div>
-                    <div class="flex items-center space-x-2 text-sm text-gray-600">
-                        <input type="checkbox" v-model="form.remember" name="remember" id="remember" class="h-4 w-4 text-blue-600">
-                        <label for="remember">Remember me</label>
-                    </div>
-                    <button type="submit" :disabled="form.processing" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-md w-full hover:bg-gray-800 transition">Login</button>
-                    <p v-if="form.errors.email || form.errors.password" class="text-red-500 text-sm mt-2">
-                        Invalid credentials. Please try again.
+                </div>
+                <!-- Continue Button 
+<button class="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#00A2E8] text-white rounded-xl font-bold text-[17px] headline-font active:scale-[0.98] transition-all duration-200 h-[58px]" type="submit">
+            Continue
+            <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
+</button> -->
+                <a href="otp2.html"
+                    class="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#00A2E8] text-white rounded-xl font-bold text-[17px] headline-font active:scale-[0.98] transition-all duration-200 h-[58px]"
+                    type="submit">
+                    Continue
+                    <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
+                </a>
+            </form>
+            <!-- Footer Links -->
+            <footer class="mt-12 text-center space-y-12">
+                <p class="text-[#757575] font-medium text-[15px] tracking-tight">
+                    Don't have an account ? <a class="text-[#00A2E8] font-bold" href="#">Sign up</a>
+                </p>
+                <div class="space-y-3">
+                    <p class="text-[15px] text-[#757575] font-medium tracking-tight">
+                        By continue you agree to Gathrs
                     </p>
-                    <div class="text-right mt-2">
-                        <Link  v-if="canResetPassword" :href="route('password.request')" class="text-blue-600 hover:underline text-sm">Forgot Password?</Link>
+                    <div class="flex justify-center gap-6">
+                        <a class="text-[#00A2E8] font-semibold text-[15px]" href="#">Terms of Service</a>
+                        <a class="text-[#00A2E8] font-semibold text-[15px]" href="#">Privacy Policy</a>
                     </div>
-                </form>
-            <div class="text-center mt-6 text-xs text-gray-500">
-                © 2025 PaySync | <Link href="/privacy" class="hover:underline">Privacy Policy</Link> | <Link href="/terms" class="hover:underline">Terms of Service</Link>
-            </div>
-            </div>
-        </div>
-    </GuestLayout>
+                </div>
+            </footer>
+        </main>
+    </body>
 </template>
 
-<!--<template>
-    <GuestLayout>
-        <Head title="Log in" />
-
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
-            {{ status }}
-        </div>
-
-        <form >
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="mt-4 block">
-                <label class="flex items-center">
-                    <Checkbox name="remember"  />
-                    <span class="ms-2 text-sm text-gray-600"
-                        >Remember me</span
-                    >
-                </label>
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <Link
-                    
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Forgot your password?
-                </Link>
-
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    
-                >
-                    Log in
-                </PrimaryButton>
-            </div>
-        </form> 
-    </GuestLayout>
-</template> -->

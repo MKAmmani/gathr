@@ -1,3 +1,113 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom accordion animations */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.accordion-item.active .accordion-content {
+  max-height: 200px;
+}
+
+.accordion-item.active .chevron {
+  transform: rotate(180deg);
+}
+
+/* Prevent horizontal overflow */
+html {
+  overflow-x: hidden;
+  
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+ -webkit-font-smoothing: antialiased;
+ -moz-osx-font-smoothing: grayscale;
+}
+
+.headline-font {
+    font-family: 'Manrope', sans-serif;
+}
+
+.logo-font {
+    font-family: 'Manrope', sans-serif;
+    letter-spacing: -0.02em;
+}
+
+input::placeholder {
+    color: #A0AEC0 !important;
+    font-weight: 400;
+    ring: none;
+    border-color: #009EE2 !important;
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+
+    /* Custom height for mobile-like appearance on desktop if viewed there */
+    .mobile-container {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Input box specific styles to match image */
+    .otp-input {
+      width: 64px;
+      height: 64px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 500;
+      border-radius: 12px;
+      border-width: 1.5px;
+      transition: all 0.2s ease;
+    }
+
+    .otp-input:focus {
+      outline: none;
+      border-color: #009CDE;
+      box-shadow: 0 0 0 1px #009CDE;
+    }
+
+    .otp-input-filled {
+      background-color: #F0F9FF;
+      border-color: #009CDE;
+      color: #009CDE;
+    }
+
+    .otp-input-empty {
+      background-color: transparent;
+      border-color: #009CDE;
+    }
+/* Specific styling for the progress bar segments */
+    .progress-segment {
+      height: 4px;
+      border-radius: 2px;
+      flex: 1;
+    }
+
+ /* Fixed positioning for bottom button to match mobile app feel */
+    .sticky-bottom-button {
+      position: fixed;
+      bottom: 2rem;
+      left: 1.25rem;
+      right: 1.25rem;
+      max-width: 430px; /* Matching image width constraints for mobile view */
+      margin: 0 auto;
+    }
+    /* Ensure the content doesn't get hidden behind the fixed button */
+    .content-wrapper {
+      padding-bottom: 100px;
+    }

@@ -1,386 +1,1054 @@
-<script setup>
-import { Head, Link } from '@inertiajs/vue3';
-
-defineProps({
-    canLogin: {
-        type: Boolean,
-    },
-    canRegister: {
-        type: Boolean,
-    },
-    laravelVersion: {
-        type: String,
-        required: true,
-    },
-    phpVersion: {
-        type: String,
-        required: true,
-    },
-});
-
-function handleImageError() {
-    document.getElementById('screenshot-container')?.classList.add('!hidden');
-    document.getElementById('docs-card')?.classList.add('!row-span-1');
-    document.getElementById('docs-card-content')?.classList.add('!flex-row');
-    document.getElementById('background')?.classList.add('!hidden');
-}
-</script>
-
 <template>
-    <Head title="Welcome" />
-    <div class="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">
-        <img
-            id="background"
-            class="absolute -left-20 top-0 max-w-[877px]"
-            src="https://laravel.com/assets/img/welcome/background.svg"
-        />
-        <div
-            class="relative flex min-h-screen flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white"
-        >
-            <div class="relative w-full max-w-2xl px-6 lg:max-w-7xl">
-                <header
-                    class="grid grid-cols-2 items-center gap-2 py-10 lg:grid-cols-3"
-                >
-                    <div class="flex lg:col-start-2 lg:justify-center">
-                        <svg
-                            class="h-12 w-auto text-white lg:h-16 lg:text-[#FF2D20]"
-                            viewBox="0 0 62 65"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path
-                                d="M61.8548 14.6253C61.8778 14.7102 61.8895 14.7978 61.8897 14.8858V28.5615C61.8898 28.737 61.8434 28.9095 61.7554 29.0614C61.6675 29.2132 61.5409 29.3392 61.3887 29.4265L49.9104 36.0351V49.1337C49.9104 49.4902 49.7209 49.8192 49.4118 49.9987L25.4519 63.7916C25.3971 63.8227 25.3372 63.8427 25.2774 63.8639C25.255 63.8714 25.2338 63.8851 25.2101 63.8913C25.0426 63.9354 24.8666 63.9354 24.6991 63.8913C24.6716 63.8838 24.6467 63.8689 24.6205 63.8589C24.5657 63.8389 24.5084 63.8215 24.456 63.7916L0.501061 49.9987C0.348882 49.9113 0.222437 49.7853 0.134469 49.6334C0.0465019 49.4816 0.000120578 49.3092 0 49.1337L0 8.10652C0 8.01678 0.0124642 7.92953 0.0348998 7.84477C0.0423783 7.8161 0.0598282 7.78993 0.0697995 7.76126C0.0884958 7.70891 0.105946 7.65531 0.133367 7.6067C0.152063 7.5743 0.179485 7.54812 0.20192 7.51821C0.230588 7.47832 0.256763 7.43719 0.290416 7.40229C0.319084 7.37362 0.356476 7.35243 0.388883 7.32751C0.425029 7.29759 0.457436 7.26518 0.498568 7.2415L12.4779 0.345059C12.6296 0.257786 12.8015 0.211853 12.9765 0.211853C13.1515 0.211853 13.3234 0.257786 13.475 0.345059L25.4531 7.2415H25.4556C25.4955 7.26643 25.5292 7.29759 25.5653 7.32626C25.5977 7.35119 25.6339 7.37362 25.6625 7.40104C25.6974 7.43719 25.7224 7.47832 25.7523 7.51821C25.7735 7.54812 25.8021 7.5743 25.8196 7.6067C25.8483 7.65656 25.8645 7.70891 25.8844 7.76126C25.8944 7.78993 25.9118 7.8161 25.9193 7.84602C25.9423 7.93096 25.954 8.01853 25.9542 8.10652V33.7317L35.9355 27.9844V14.8846C35.9355 14.7973 35.948 14.7088 35.9704 14.6253C35.9792 14.5954 35.9954 14.5692 36.0053 14.5405C36.0253 14.4882 36.0427 14.4346 36.0702 14.386C36.0888 14.3536 36.1163 14.3274 36.1375 14.2975C36.1674 14.2576 36.1923 14.2165 36.2272 14.1816C36.2559 14.1529 36.292 14.1317 36.3244 14.1068C36.3618 14.0769 36.3942 14.0445 36.4341 14.0208L48.4147 7.12434C48.5663 7.03694 48.7383 6.99094 48.9133 6.99094C49.0883 6.99094 49.2602 7.03694 49.4118 7.12434L61.3899 14.0208C61.4323 14.0457 61.4647 14.0769 61.5021 14.1055C61.5333 14.1305 61.5694 14.1529 61.5981 14.1803C61.633 14.2165 61.6579 14.2576 61.6878 14.2975C61.7103 14.3274 61.7377 14.3536 61.7551 14.386C61.7838 14.4346 61.8 14.4882 61.8199 14.5405C61.8312 14.5692 61.8474 14.5954 61.8548 14.6253ZM59.893 27.9844V16.6121L55.7013 19.0252L49.9104 22.3593V33.7317L59.8942 27.9844H59.893ZM47.9149 48.5566V37.1768L42.2187 40.4299L25.953 49.7133V61.2003L47.9149 48.5566ZM1.99677 9.83281V48.5566L23.9562 61.199V49.7145L12.4841 43.2219L12.4804 43.2194L12.4754 43.2169C12.4368 43.1945 12.4044 43.1621 12.3682 43.1347C12.3371 43.1097 12.3009 43.0898 12.2735 43.0624L12.271 43.0586C12.2386 43.0275 12.2162 42.9888 12.1887 42.9539C12.1638 42.9203 12.1339 42.8916 12.114 42.8567L12.1127 42.853C12.0903 42.8156 12.0766 42.7707 12.0604 42.7283C12.0442 42.6909 12.023 42.656 12.013 42.6161C12.0005 42.5688 11.998 42.5177 11.9931 42.4691C11.9881 42.4317 11.9781 42.3943 11.9781 42.3569V15.5801L6.18848 12.2446L1.99677 9.83281ZM12.9777 2.36177L2.99764 8.10652L12.9752 13.8513L22.9541 8.10527L12.9752 2.36177H12.9777ZM18.1678 38.2138L23.9574 34.8809V9.83281L19.7657 12.2459L13.9749 15.5801V40.6281L18.1678 38.2138ZM48.9133 9.14105L38.9344 14.8858L48.9133 20.6305L58.8909 14.8846L48.9133 9.14105ZM47.9149 22.3593L42.124 19.0252L37.9323 16.6121V27.9844L43.7219 31.3174L47.9149 33.7317V22.3593ZM24.9533 47.987L39.59 39.631L46.9065 35.4555L36.9352 29.7145L25.4544 36.3242L14.9907 42.3482L24.9533 47.987Z"
-                                fill="currentColor"
-                            />
-                        </svg>
-                    </div>
-                    <nav v-if="canLogin" class="-mx-3 flex flex-1 justify-end">
-                        <Link
-                            v-if="$page.props.auth.user"
-                            :href="route('dashboard')"
-                            class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                        >
-                            Dashboard
-                        </Link>
+     <body
+        class="bg-white font-['Plus_Jakarta_Sans, sans-serif'] antialiased text-gray-900 overflow-x-hidden flex flex-col">
+        <!-- Header -->
+        <header class="flex items-center justify-between px-6 py-4 bg-white sticky top-0 z-50">
+            <div class="flex items-center">
+                <h1 class="text-2xl font-extrabold tracking-tighter text-slate-900">
+                    GATH<span class="text-brand-blue">R</span>
+                </h1>
+            </div>
+            <div class="flex items-center gap-6">
+                <a class="text-sm font-bold text-gray-600 hover:text-gray-900" href="#">Sign in</a>
+                <a class="bg-brand-blue hover:bg-brand-darkBlue text-white px-5 py-2.5 rounded-full text-sm font-bold flex items-center transition-all duration-200"
+                    href="register.html">
+                    Get Started <span class="ml-2">→</span>
+                </a>
+            </div>
+        </header>
 
-                        <template v-else>
-                            <Link
-                                :href="route('login')"
-                                class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                            >
-                                Log in
-                            </Link>
+        <main class="max-w-md mx-auto px-6 pt-8 pb-6">
 
-                            <Link
-                                v-if="canRegister"
-                                :href="route('register')"
-                                class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
-                            >
-                                Register
-                            </Link>
-                        </template>
-                    </nav>
-                </header>
+            <!-- Hero -->
+            <section>
+                <!-- Campus Badge -->
+                <div
+                    class="inline-flex items-center bg-brand-lightBlue border border-blue-100 px-3 py-1.5 rounded-full mb-8">
+                    <div class="w-1.5 h-1.5 rounded-full bg-brand-blue mr-2"></div>
+                    <span class="text-[11px] font-bold text-brand-blue uppercase tracking-wider">Built for Nigerian
+                        campus Life</span>
+                </div>
 
-                <main class="mt-6">
-                    <div class="grid gap-6 lg:grid-cols-2 lg:gap-8">
-                        <a
-                            href="https://laravel.com/docs"
-                            id="docs-card"
-                            class="flex flex-col items-start gap-6 overflow-hidden rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] md:row-span-3 lg:p-10 lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                        >
-                            <div
-                                id="screenshot-container"
-                                class="relative flex w-full flex-1 items-stretch"
-                            >
-                                <img
-                                    src="https://laravel.com/assets/img/welcome/docs-light.svg"
-                                    alt="Laravel documentation screenshot"
-                                    class="aspect-video h-full w-full flex-1 rounded-[10px] object-cover object-top drop-shadow-[0px_4px_34px_rgba(0,0,0,0.06)] dark:hidden"
-                                    @error="handleImageError"
-                                />
-                                <img
-                                    src="https://laravel.com/assets/img/welcome/docs-dark.svg"
-                                    alt="Laravel documentation screenshot"
-                                    class="hidden aspect-video h-full w-full flex-1 rounded-[10px] object-cover object-top drop-shadow-[0px_4px_34px_rgba(0,0,0,0.25)] dark:block"
-                                />
-                                <div
-                                    class="absolute -bottom-16 -left-16 h-40 w-[calc(100%+8rem)] bg-gradient-to-b from-transparent via-white to-white dark:via-zinc-900 dark:to-zinc-900"
-                                ></div>
-                            </div>
+                <h2 class="text-[38px] leading-[1.1] font-extrabold text-[#1a1a1a] mb-6">
+                    Group payment <br />
+                    never been <br />
+                    <span class="text-brand-blue">this easy</span>
+                </h2>
 
-                            <div
-                                class="relative flex items-center gap-6 lg:items-end"
-                            >
-                                <div
-                                    id="docs-card-content"
-                                    class="flex items-start gap-6 lg:flex-col"
-                                >
-                                    <div
-                                        class="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16"
-                                    >
-                                        <svg
-                                            class="size-5 sm:size-6"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                fill="#FF2D20"
-                                                d="M23 4a1 1 0 0 0-1.447-.894L12.224 7.77a.5.5 0 0 1-.448 0L2.447 3.106A1 1 0 0 0 1 4v13.382a1.99 1.99 0 0 0 1.105 1.79l9.448 4.728c.14.065.293.1.447.1.154-.005.306-.04.447-.105l9.453-4.724a1.99 1.99 0 0 0 1.1-1.789V4ZM3 6.023a.25.25 0 0 1 .362-.223l7.5 3.75a.251.251 0 0 1 .138.223v11.2a.25.25 0 0 1-.362.224l-7.5-3.75a.25.25 0 0 1-.138-.22V6.023Zm18 11.2a.25.25 0 0 1-.138.224l-7.5 3.75a.249.249 0 0 1-.329-.099.249.249 0 0 1-.033-.12V9.772a.251.251 0 0 1 .138-.224l7.5-3.75a.25.25 0 0 1 .362.224v11.2Z"
-                                            />
-                                            <path
-                                                fill="#FF2D20"
-                                                d="m3.55 1.893 8 4.048a1.008 1.008 0 0 0 .9 0l8-4.048a1 1 0 0 0-.9-1.785l-7.322 3.706a.506.506 0 0 1-.452 0L4.454.108a1 1 0 0 0-.9 1.785H3.55Z"
-                                            />
-                                        </svg>
-                                    </div>
+                <p class="text-gray-600 text-[15px] leading-relaxed mb-10 font-medium">
+                    One link. Everyone pays. No whatsapp receipt chaos. No fake screenshots. No chasing 150 people one
+                    by one, Gathr handles everything in 60 secs
+                </p>
+            </section>
 
-                                    <div class="pt-3 sm:pt-5 lg:pt-0">
-                                        <h2
-                                            class="text-xl font-semibold text-black dark:text-white"
-                                        >
-                                            Documentation
-                                        </h2>
+            <!-- Features -->
+            <section class="grid grid-cols-2 gap-3 mb-10">
+                <div class="bg-white border border-gray-100 shadow-sm p-4 rounded-xl flex items-center gap-3">
+                    <span class="material-symbols-outlined text-brand-blue text-xl">groups</span>
+                    <span class="text-[13px] font-bold text-gray-800">Group Collections</span>
+                </div>
+                <div class="bg-white border border-gray-100 shadow-sm p-4 rounded-xl flex items-center gap-3">
+                    <span class="material-symbols-outlined text-brand-blue text-xl">confirmation_number</span>
+                    <span class="text-[13px] font-bold text-gray-800">Event Tickets</span>
+                </div>
+                <div class="bg-white border border-gray-100 shadow-sm p-4 rounded-xl flex items-center gap-3">
+                    <span class="material-symbols-outlined text-brand-blue text-xl">shopping_cart</span>
+                    <span class="text-[13px] font-bold text-gray-800">Campus business</span>
+                </div>
+            </section>
 
-                                        <p class="mt-4 text-sm/relaxed">
-                                            Laravel has wonderful documentation
-                                            covering every aspect of the
-                                            framework. Whether you are a
-                                            newcomer or have prior experience
-                                            with Laravel, we recommend reading
-                                            our documentation from beginning to
-                                            end.
-                                        </p>
-                                    </div>
-                                </div>
+            <!-- Primary Actions -->
+            <section class="space-y-4 mb-8">
+                <button
+                    class="w-full bg-brand-blue text-white py-4.5 rounded-full font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-blue-100 h-16 transition-all hover:brightness-105">
+                    Create a collection <span class="material-symbols-outlined text-[24px]">arrow_forward</span>
+                </button>
+                <button
+                    class="w-full bg-white border border-gray-100 text-brand-blue py-4.5 rounded-full font-bold text-lg shadow-sm h-16 hover:bg-gray-50 transition-all">
+                    See how it works
+                </button>
+            </section>
 
-                                <svg
-                                    class="size-6 shrink-0 stroke-[#FF2D20]"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                    />
-                                </svg>
-                            </div>
-                        </a>
+            <!-- Trust Badge -->
+            <div class="flex items-center gap-2 mb-12">
+                <span class="material-symbols-outlined text-[18px] text-gray-700">verified_user</span>
+                <span class="text-sm font-semibold text-gray-700">Secured by Paystack</span>
+                <div class="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
+            </div>
 
-                        <a
-                            href="https://laracasts.com"
-                            class="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                        >
-                            <div
-                                class="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16"
-                            >
-                                <svg
-                                    class="size-5 sm:size-6"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <g fill="#FF2D20">
-                                        <path
-                                            d="M24 8.25a.5.5 0 0 0-.5-.5H.5a.5.5 0 0 0-.5.5v12a2.5 2.5 0 0 0 2.5 2.5h19a2.5 2.5 0 0 0 2.5-2.5v-12Zm-7.765 5.868a1.221 1.221 0 0 1 0 2.264l-6.626 2.776A1.153 1.153 0 0 1 8 18.123v-5.746a1.151 1.151 0 0 1 1.609-1.035l6.626 2.776ZM19.564 1.677a.25.25 0 0 0-.177-.427H15.6a.106.106 0 0 0-.072.03l-4.54 4.543a.25.25 0 0 0 .177.427h3.783c.027 0 .054-.01.073-.03l4.543-4.543ZM22.071 1.318a.047.047 0 0 0-.045.013l-4.492 4.492a.249.249 0 0 0 .038.385.25.25 0 0 0 .14.042h5.784a.5.5 0 0 0 .5-.5v-2a2.5 2.5 0 0 0-1.925-2.432ZM13.014 1.677a.25.25 0 0 0-.178-.427H9.101a.106.106 0 0 0-.073.03l-4.54 4.543a.25.25 0 0 0 .177.427H8.4a.106.106 0 0 0 .073-.03l4.54-4.543ZM6.513 1.677a.25.25 0 0 0-.177-.427H2.5A2.5 2.5 0 0 0 0 3.75v2a.5.5 0 0 0 .5.5h1.4a.106.106 0 0 0 .073-.03l4.54-4.543Z"
-                                        />
-                                    </g>
-                                </svg>
-                            </div>
+            <!-- Demo Card -->
+            <section class="bg-white rounded-[40px] overflow-hidden shadow-2xl border border-gray-50">
+                <!-- Header with gradient-like feel -->
+                <div class="bg-gradient-to-br from-[#1E6FA0] to-[#2F8FC7] p-6 pb-6">
+                    <p class="text-blue-50 text-[11px] font-bold uppercase tracking-widest mb-3">Active Collection</p>
+                    <h3
+                        class="text-white text-[22px] font-extrabold flex items-center justify-between mb-6 whitespace-nowrap overflow-hidden text-ellipsis">
+                        500L End-of-Year Dinner 🍴
+                    </h3>
 
-                            <div class="pt-3 sm:pt-5">
-                                <h2
-                                    class="text-xl font-semibold text-black dark:text-white"
-                                >
-                                    Laracasts
-                                </h2>
-
-                                <p class="mt-4 text-sm/relaxed">
-                                    Laracasts offers thousands of video
-                                    tutorials on Laravel, PHP, and JavaScript
-                                    development. Check them out, see for
-                                    yourself, and massively level up your
-                                    development skills in the process.
-                                </p>
-                            </div>
-
-                            <svg
-                                class="size-6 shrink-0 self-center stroke-[#FF2D20]"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                />
-                            </svg>
-                        </a>
-
-                        <a
-                            href="https://laravel-news.com"
-                            class="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] transition duration-300 hover:text-black/70 hover:ring-black/20 focus:outline-none focus-visible:ring-[#FF2D20] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800 dark:hover:text-white/70 dark:hover:ring-zinc-700 dark:focus-visible:ring-[#FF2D20]"
-                        >
-                            <div
-                                class="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16"
-                            >
-                                <svg
-                                    class="size-5 sm:size-6"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <g fill="#FF2D20">
-                                        <path
-                                            d="M8.75 4.5H5.5c-.69 0-1.25.56-1.25 1.25v4.75c0 .69.56 1.25 1.25 1.25h3.25c.69 0 1.25-.56 1.25-1.25V5.75c0-.69-.56-1.25-1.25-1.25Z"
-                                        />
-                                        <path
-                                            d="M24 10a3 3 0 0 0-3-3h-2V2.5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2V20a3.5 3.5 0 0 0 3.5 3.5h17A3.5 3.5 0 0 0 24 20V10ZM3.5 21.5A1.5 1.5 0 0 1 2 20V3a.5.5 0 0 1 .5-.5h14a.5.5 0 0 1 .5.5v17c0 .295.037.588.11.874a.5.5 0 0 1-.484.625L3.5 21.5ZM22 20a1.5 1.5 0 1 1-3 0V9.5a.5.5 0 0 1 .5-.5H21a1 1 0 0 1 1 1v10Z"
-                                        />
-                                        <path
-                                            d="M12.751 6.047h2a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-2A.75.75 0 0 1 12 7.3v-.5a.75.75 0 0 1 .751-.753ZM12.751 10.047h2a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-2A.75.75 0 0 1 12 11.3v-.5a.75.75 0 0 1 .751-.753ZM4.751 14.047h10a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-10A.75.75 0 0 1 4 15.3v-.5a.75.75 0 0 1 .751-.753ZM4.75 18.047h7.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-.75.75h-7.5A.75.75 0 0 1 4 19.3v-.5a.75.75 0 0 1 .75-.753Z"
-                                        />
-                                    </g>
-                                </svg>
-                            </div>
-
-                            <div class="pt-3 sm:pt-5">
-                                <h2
-                                    class="text-xl font-semibold text-black dark:text-white"
-                                >
-                                    Laravel News
-                                </h2>
-
-                                <p class="mt-4 text-sm/relaxed">
-                                    Laravel News is a community driven portal
-                                    and newsletter aggregating all of the latest
-                                    and most important news in the Laravel
-                                    ecosystem, including new package releases
-                                    and tutorials.
-                                </p>
-                            </div>
-
-                            <svg
-                                class="size-6 shrink-0 self-center stroke-[#FF2D20]"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75"
-                                />
-                            </svg>
-                        </a>
-
-                        <div
-                            class="flex items-start gap-4 rounded-lg bg-white p-6 shadow-[0px_14px_34px_0px_rgba(0,0,0,0.08)] ring-1 ring-white/[0.05] lg:pb-10 dark:bg-zinc-900 dark:ring-zinc-800"
-                        >
-                            <div
-                                class="flex size-12 shrink-0 items-center justify-center rounded-full bg-[#FF2D20]/10 sm:size-16"
-                            >
-                                <svg
-                                    class="size-5 sm:size-6"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <g fill="#FF2D20">
-                                        <path
-                                            d="M16.597 12.635a.247.247 0 0 0-.08-.237 2.234 2.234 0 0 1-.769-1.68c.001-.195.03-.39.084-.578a.25.25 0 0 0-.09-.267 8.8 8.8 0 0 0-4.826-1.66.25.25 0 0 0-.268.181 2.5 2.5 0 0 1-2.4 1.824.045.045 0 0 0-.045.037 12.255 12.255 0 0 0-.093 3.86.251.251 0 0 0 .208.214c2.22.366 4.367 1.08 6.362 2.118a.252.252 0 0 0 .32-.079 10.09 10.09 0 0 0 1.597-3.733ZM13.616 17.968a.25.25 0 0 0-.063-.407A19.697 19.697 0 0 0 8.91 15.98a.25.25 0 0 0-.287.325c.151.455.334.898.548 1.328.437.827.981 1.594 1.619 2.28a.249.249 0 0 0 .32.044 29.13 29.13 0 0 0 2.506-1.99ZM6.303 14.105a.25.25 0 0 0 .265-.274 13.048 13.048 0 0 1 .205-4.045.062.062 0 0 0-.022-.07 2.5 2.5 0 0 1-.777-.982.25.25 0 0 0-.271-.149 11 11 0 0 0-5.6 2.815.255.255 0 0 0-.075.163c-.008.135-.02.27-.02.406.002.8.084 1.598.246 2.381a.25.25 0 0 0 .303.193 19.924 19.924 0 0 1 5.746-.438ZM9.228 20.914a.25.25 0 0 0 .1-.393 11.53 11.53 0 0 1-1.5-2.22 12.238 12.238 0 0 1-.91-2.465.248.248 0 0 0-.22-.187 18.876 18.876 0 0 0-5.69.33.249.249 0 0 0-.179.336c.838 2.142 2.272 4 4.132 5.353a.254.254 0 0 0 .15.048c1.41-.01 2.807-.282 4.117-.802ZM18.93 12.957l-.005-.008a.25.25 0 0 0-.268-.082 2.21 2.21 0 0 1-.41.081.25.25 0 0 0-.217.2c-.582 2.66-2.127 5.35-5.75 7.843a.248.248 0 0 0-.09.299.25.25 0 0 0 .065.091 28.703 28.703 0 0 0 2.662 2.12.246.246 0 0 0 .209.037c2.579-.701 4.85-2.242 6.456-4.378a.25.25 0 0 0 .048-.189 13.51 13.51 0 0 0-2.7-6.014ZM5.702 7.058a.254.254 0 0 0 .2-.165A2.488 2.488 0 0 1 7.98 5.245a.093.093 0 0 0 .078-.062 19.734 19.734 0 0 1 3.055-4.74.25.25 0 0 0-.21-.41 12.009 12.009 0 0 0-10.4 8.558.25.25 0 0 0 .373.281 12.912 12.912 0 0 1 4.826-1.814ZM10.773 22.052a.25.25 0 0 0-.28-.046c-.758.356-1.55.635-2.365.833a.25.25 0 0 0-.022.48c1.252.43 2.568.65 3.893.65.1 0 .2 0 .3-.008a.25.25 0 0 0 .147-.444c-.526-.424-1.1-.917-1.673-1.465ZM18.744 8.436a.249.249 0 0 0 .15.228 2.246 2.246 0 0 1 1.352 2.054c0 .337-.08.67-.23.972a.25.25 0 0 0 .042.28l.007.009a15.016 15.016 0 0 1 2.52 4.6.25.25 0 0 0 .37.132.25.25 0 0 0 .096-.114c.623-1.464.944-3.039.945-4.63a12.005 12.005 0 0 0-5.78-10.258.25.25 0 0 0-.373.274c.547 2.109.85 4.274.901 6.453ZM9.61 5.38a.25.25 0 0 0 .08.31c.34.24.616.561.8.935a.25.25 0 0 0 .3.127.631.631 0 0 1 .206-.034c2.054.078 4.036.772 5.69 1.991a.251.251 0 0 0 .267.024c.046-.024.093-.047.141-.067a.25.25 0 0 0 .151-.23A29.98 29.98 0 0 0 15.957.764a.25.25 0 0 0-.16-.164 11.924 11.924 0 0 0-2.21-.518.252.252 0 0 0-.215.076A22.456 22.456 0 0 0 9.61 5.38Z"
-                                        />
-                                    </g>
-                                </svg>
-                            </div>
-
-                            <div class="pt-3 sm:pt-5">
-                                <h2
-                                    class="text-xl font-semibold text-black dark:text-white"
-                                >
-                                    Vibrant Ecosystem
-                                </h2>
-
-                                <p class="mt-4 text-sm/relaxed">
-                                    Laravel's robust library of first-party
-                                    tools and libraries, such as
-                                    <a
-                                        href="https://forge.laravel.com"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white dark:focus-visible:ring-[#FF2D20]"
-                                        >Forge</a
-                                    >,
-                                    <a
-                                        href="https://vapor.laravel.com"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Vapor</a
-                                    >,
-                                    <a
-                                        href="https://nova.laravel.com"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Nova</a
-                                    >,
-                                    <a
-                                        href="https://envoyer.io"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Envoyer</a
-                                    >, and
-                                    <a
-                                        href="https://herd.laravel.com"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Herd</a
-                                    >
-                                    help you take your projects to the next
-                                    level. Pair them with powerful open source
-                                    libraries like
-                                    <a
-                                        href="https://laravel.com/docs/billing"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Cashier</a
-                                    >,
-                                    <a
-                                        href="https://laravel.com/docs/dusk"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Dusk</a
-                                    >,
-                                    <a
-                                        href="https://laravel.com/docs/broadcasting"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Echo</a
-                                    >,
-                                    <a
-                                        href="https://laravel.com/docs/horizon"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Horizon</a
-                                    >,
-                                    <a
-                                        href="https://laravel.com/docs/sanctum"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Sanctum</a
-                                    >,
-                                    <a
-                                        href="https://laravel.com/docs/telescope"
-                                        class="rounded-sm underline hover:text-black focus:outline-none focus-visible:ring-1 focus-visible:ring-[#FF2D20] dark:hover:text-white"
-                                        >Telescope</a
-                                    >, and more.
-                                </p>
+                    <!-- Progress -->
+                    <div>
+                        <div class="w-full bg-white/30 rounded-full h-2 mb-3 overflow-hidden">
+                            <div class="bg-orange-400 h-full rounded-full w-[72%]"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-white text-[13px] font-bold">
+                            <p><span class="text-orange-400">36</span> of 50 paid</p>
+                            <p><span class="text-orange-400">₦75,000</span> raised</p>
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px]">calendar_month</span>
+                                <span>2 Days Left</span>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6">
+                    <!-- Avatars -->
+                    <div class="flex items-center mb-8">
+                        <div class="flex -space-x-2 mr-3">
+                            <div
+                                class="w-8 h-8 rounded-full border-2 border-white bg-brand-blue text-[10px] text-white flex items-center justify-center font-bold">
+                                AO</div>
+                            <div
+                                class="w-8 h-8 rounded-full border-2 border-white bg-orange-400 text-[10px] text-white flex items-center justify-center font-bold">
+                                OC</div>
+                            <div
+                                class="w-8 h-8 rounded-full border-2 border-white bg-green-400 text-[10px] text-white flex items-center justify-center font-bold">
+                                TM</div>
+                            <div
+                                class="w-8 h-8 rounded-full border-2 border-white bg-red-900 text-[10px] text-white flex items-center justify-center font-bold">
+                                F</div>
+                        </div>
+                        <p class="text-sm text-gray-400 font-medium">
+                            <span class="text-gray-900 font-bold">36 classmates</span> paid, 14 still pending
+                        </p>
+                    </div>
+
+                    <!-- Recent Payments -->
+                    <div class="space-y-3 mb-8">
+                        <!-- Payment 1 -->
+                        <div
+                            class="flex items-center justify-between bg-blue-50/40 p-3.5 rounded-2xl border border-blue-100/50">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-[#B3E5FC] text-brand-blue flex items-center justify-center font-bold text-xs">
+                                    AO</div>
+                                <div>
+                                    <p class="text-[13px] font-bold text-gray-800">Adaeze paid in full.</p>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[10px] text-gray-300">•</span>
+                                        <p class="text-[11px] text-gray-400">3 mins ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-[13px] font-bold text-green-500">+₦5,000</span>
+                        </div>
+
+                        <!-- Payment 2 -->
+                        <div
+                            class="flex items-center justify-between bg-blue-50/40 p-3.5 rounded-2xl border border-blue-100/50">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-[#C8E6C9] text-green-700 flex items-center justify-center font-bold text-xs">
+                                    BO</div>
+                                <div>
+                                    <p class="text-[13px] font-bold text-gray-800">Boka paid part.</p>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[10px] text-gray-300">•</span>
+                                        <p class="text-[11px] text-gray-400">3 mins ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-[13px] font-bold text-orange-400">+₦1,000</span>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Share -->
+                    <button
+                        class="w-full bg-[#25D366] hover:opacity-95 text-white py-4.5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg h-[60px] transition-all">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z">
+                            </path>
+                        </svg>
+                        <span class="text-base font-bold">Share link to group</span>
+                        <span class="material-symbols-outlined text-[20px]">send</span>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- BEGIN: Trust Strip -->
+        <section class="w-full h-16 bg-[#0b3d52] flex items-center overflow-hidden">
+            <div class="flex items-center gap-8 whitespace-nowrap animate-marquee">
+
+                <!-- Stat 1: Food orders paid -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <svg class="w-6 h-6 text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v4z" />
+                    </svg>
+                    <span class="text-white text-sm font-medium">
+                        Food orders <span class="text-[#ffc84d]">paid</span>
+                    </span>
+                </div>
+
+                <!-- Stat 2: Event tickets sold -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <svg class="w-6 h-6 text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.67C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-9-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-4 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm13 15H4v-5h16v5zm0-7H4V8h16v4z" />
+                    </svg>
+                    <span class="text-white text-sm font-medium">
+                        Event tickets <span class="text-[#ffc84d]">sold</span>
+                    </span>
+                </div>
+
+                <!-- Stat 3: Classmates paid -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <svg class="w-6 h-6 text-sky-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3 1 9l4 2.18v6l7 3.82 7-3.82v-6l-4-2.18V17l-3 1.64V12l7-3.82L12 3z" />
+                    </svg>
+                    <span class="text-white text-sm font-medium">
+                        Classmates <span class="text-[#ffc84d]">paid</span>
+                    </span>
+                </div>
+
+                <!-- Duplicate items for seamless loop -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <svg class="w-6 h-6 text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v4z" />
+                    </svg>
+                    <span class="text-white text-sm font-medium">
+                        Food orders <span class="text-[#ffc84d]">paid</span>
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <svg class="w-6 h-6 text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.67C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-9-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-4 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm13 15H4v-5h16v5zm0-7H4V8h16v4z" />
+                    </svg>
+                    <span class="text-white text-sm font-medium">
+                        Event tickets <span class="text-[#ffc84d]">sold</span>
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <svg class="w-6 h-6 text-sky-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 3 1 9l4 2.18v6l7 3.82 7-3.82v-6l-4-2.18V17l-3 1.64V12l7-3.82L12 3z" />
+                    </svg>
+                    <span class="text-white text-sm font-medium">
+                        Classmates <span class="text-[#ffc84d]">paid</span>
+                    </span>
+                </div>
+
+            </div>
+        </section>
+        <!-- END: Trust Strip -->
+        <!-- BEGIN: Stats Section -->
+        <section class="grid grid-cols-2 gap-4 mt-16">
+
+            <!-- Card 1 -->
+            <article
+                class="bg-sky-50 border border-sky-100 rounded-2xl relative overflow-hidden flex flex-col p-6 h-full">
+                <!-- Top accent bar -->
+                <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+
+                <h2 class="text-sky-600 font-bold text-4xl leading-tight mb-2 mt-3">2M+</h2>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                    Nigeria university students who need this
+                </p>
+            </article>
+
+            <!-- Card 2 -->
+            <article
+                class="bg-sky-50 border border-sky-100 rounded-2xl relative overflow-hidden flex flex-col p-6 h-full">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+
+                <h2 class="text-sky-600 font-bold text-4xl leading-tight mb-2 mt-3">1000+</h2>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                    Student-led payment groups happening daily
+                </p>
+            </article>
+
+            <!-- Card 3 -->
+            <article
+                class="bg-sky-50 border border-sky-100 rounded-2xl relative overflow-hidden flex flex-col p-6 h-full">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+
+                <h2 class="text-sky-600 font-bold text-4xl leading-tight mb-2 mt-3">100+</h2>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                    Students surveyed — 100% had this problem
+                </p>
+            </article>
+
+            <!-- Card 4 -->
+            <article
+                class="bg-sky-50 border border-sky-100 rounded-2xl relative overflow-hidden flex flex-col p-6 h-full">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+
+                <h2 class="text-sky-600 font-bold text-4xl leading-tight mb-2 mt-3">60s</h2>
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">
+                    To create, share, and go live with a collection
+                </p>
+            </article>
+
+        </section>
+        <!-- END: Stats Section -->
+        <!-- BEGIN: Problem Section -->
+        <section class="px-6 py-12 text-center">
+            <div class="inline-block bg-blue-50 text-primary text-[10px] font-bold px-3 py-1 rounded-full mb-6">Problem
+            </div>
+            <!-- Main content card -->
+            <main
+                class="w-full max-w-md bg-white rounded-[32px] border border-red-100 p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] flex flex-col gap-8 mb-6 mt-4">
+
+                <!-- Header -->
+                <section class="text-center">
+                    <h1 class="text-2xl font-bold text-red-400 mb-3">
+                        Sounds painfully familiar?
+                    </h1>
+                    <p class="text-gray-600 text-[15px] leading-relaxed px-2">
+                        Every class rep collecting ₦3,000 from 150 students manually verifies 150 WhatsApp screenshots.
+                        Every. Single. Time. There is no system. Just stress.
+                    </p>
+                </section>
+
+                <!-- Problem list -->
+                <section class="flex flex-col gap-6">
+
+                    <!-- Problem 1 -->
+                    <div class="flex gap-2 items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            <div class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-start">
+                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" clip-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-lg">Fake & edited receipts</h3>
+                            <p class="text-gray-500 text-sm leading-snug mt-1">
+                                Anyone can edit a Debit Alert in 2 minutes. How do you verify 150 of them?
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Problem 2 -->
+                    <div class="flex gap-2 items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            <div class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-start">
+                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" clip-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-lg">No record of who paid</h3>
+                            <p class="text-gray-500 text-sm leading-snug mt-1">
+                                Screenshots get buried. People claim they paid. Arguments start.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Problem 3 -->
+                    <div class="flex gap-2 items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            <div class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-start">
+                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" clip-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-lg">Constant manual chasing</h3>
+                            <p class="text-gray-500 text-sm leading-snug mt-1">
+                                "Have you paid?" — sent 47 times to 47 different people. Exhausting.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Problem 4 -->
+                    <div class="flex gap-2 items-start">
+                        <div class="flex-shrink-0 mt-1">
+                            <div class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-start">
+                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" clip-rule="evenodd"
+                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="font-bold text-gray-800 text-lg">Zero transparency</h3>
+                            <p class="text-gray-500 text-sm leading-snug mt-1">
+                                One person holds the money. Nobody knows what was collected or spent.
+                            </p>
+                        </div>
+                    </div>
+
+                </section>
+
+            </main>
+            
+        </section>
+        <!-- END: Problem Section -->
+        <!-- BEGIN: App Mockup -->
+        <section class=" max-w-full">
+            <div class="relative">
+                <img alt="App Mockup" class="w-full" src="/images/whatapp.png" />
+            </div>
+        </section>
+        <!-- END: App Mockup -->
+        <!-- BEGIN: Solutions Section -->
+        <section class="py-12 bg-white text-center">
+            <div class="inline-block bg-blue-50 text-primary text-[10px] font-bold px-3 py-1 rounded-full mb-4">Solution
+            </div>
+            <div class="relative flex w-full flex-col overflow-x-hidden max-w-full">
+                <!-- Hero Section -->
+                <section class="w-full max-w-md px-6 pt-12 pb-8 text-center max-w-full">
+                    <h1 class="text-3xl font-extrabold text-[#0095E5] leading-tight mb-6">
+                        One platform.<br />
+                        Three powerful tools.
+                    </h1>
+                    <p class="text-gray-600 text-base leading-relaxed font-medium">
+                        Whether you’re collecting group money, selling event tickets, or running a campus business —
+                        Gathr replaces screenshots and spreadsheets with a single smart link.
+                    </p>
+                </section>
+
+                <!-- Features Grid -->
+                <main class="  px-5 flex flex-col gap-4 max-w-full">
+
+                    <!-- Top row - 2 columns -->
+                    <div class="grid grid-cols-2 gap-4">
+
+                        <!-- Group Collections Card -->
+                        <article
+                            class="feature-card rounded-2xl p-5 flex flex-col items-start h-full bg-white border border-gray-200 shadow-md hover:shadow-lg active:scale-[0.98] transition-transform duration-200">
+                            <div class="mb-4 text-3xl">
+                                <svg class="w-8 h-8 text-[#0095E5]" fill="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="font-bold text-lg mb-1">Group Collections</h3>
+                            <p class="text-gray-400 text-sm leading-tight">Class dues, trips & dinners</p>
+                        </article>
+
+                        <!-- Event Tickets Card -->
+                        <article
+                            class="feature-card rounded-2xl p-5 flex flex-col items-start h-full bg-white border border-gray-200 shadow-md hover:shadow-lg active:scale-[0.98] transition-transform duration-200">
+                            <div class="mb-4 text-3xl">
+                                <svg class="w-8 h-8 text-[#8EACFF]" fill="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path
+                                        d="M22 10V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 2 .9 2 2s-.9 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="font-bold text-lg mb-1">Event Tickets</h3>
+                            <p class="text-gray-400 text-sm leading-tight">Sell Tickets, Scan at the door</p>
+                        </article>
+
+                    </div>
+
+                    <!-- Bottom row - Full width card -->
+                    <article
+                        class="feature-card rounded-2xl p-6 flex flex-col items-start bg-white border border-gray-200 shadow-md hover:shadow-lg active:scale-[0.98] transition-transform duration-200">
+                        <div class="mb-4 text-3xl">
+                            <svg class="w-8 h-8 text-[#0095E5]" fill="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-lg mb-1">Campus business</h3>
+                        <p class="text-gray-400 text-sm">Food, Thrifts & accessories</p>
+                    </article>
+
                 </main>
 
-                <footer
-                    class="py-16 text-center text-sm text-black dark:text-white/70"
-                >
-                    Laravel v{{ laravelVersion }} (PHP v{{ phpVersion }})
-                </footer>
+                <!-- Sticky Footer -->
+                <div class="w-full max-w-md px-5 mt-auto pt-10 pb-10 flex items-end justify-between">
+                    <div class="max-w-[180px]">
+                        <p class="text-gray-500 text-sm leading-snug">
+                            Still using Whatsapp and screenshots?
+                            <a class="text-[#0095E5] font-semibold hover:underline" href="#">There is a better way</a>
+                        </p>
+                    </div>
+
+                    <!-- Primary CTA Button -->
+                    <button
+                        class="bg-[#0095E5] text-white font-bold py-3.5 px-5 rounded-full flex items-center gap-2 shadow-lg active:opacity-90 transition-opacity hover:bg-[#0080c7]">
+                        Try Gathr now
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
+        </section>
+            <!-- END: Solutions Section -->
+            <!-- BEGIN: Feature List Section -->
+            <!-- BEGIN: Added Trust Strip -->
+            <!-- Security Banner -->
+            <section class="w-full max-w-md bg-security-navy border-t-2 border-b-2 border-security-gold flex items-center overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 animate-marquee">
+
+                    <!-- Left: Protected by Paystack -->
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight">
+                            Protected by Paystack
+                        </span>
+                    </div>
+
+                    <!-- Right: Bank Verification + Icon -->
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <!-- Icon -->
+                        <svg aria-hidden="true" class="w-6 h-6 text-blue-400 rotate-12 flex-shrink-0" fill="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 3.75a3 3 0 00-3 3v.75h21v-.75a3 3 0 00-3-3h-15z"></path>
+                            <path clip-rule="evenodd" fill-rule="evenodd"
+                                d="M22.5 9.75h-21v7.5a3 3 0 003 3h15a3 3 0 003-3v-7.5zm-18 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z">
+                            </path>
+                        </svg>
+
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight whitespace-nowrap">
+                            Bank Verification
+                        </span>
+                    </div>
+
+                    <!-- Duplicate for seamless loop -->
+                    <div class="flex items-center gap-2 flex-shrink-0 ml-8">
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight">
+                            Protected by Paystack
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <svg aria-hidden="true" class="w-6 h-6 text-blue-400 rotate-12 flex-shrink-0" fill="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 3.75a3 3 0 00-3 3v.75h21v-.75a3 3 0 00-3-3h-15z"></path>
+                            <path clip-rule="evenodd" fill-rule="evenodd"
+                                d="M22.5 9.75h-21v7.5a3 3 0 003 3h15a3 3 0 003-3v-7.5zm-18 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z">
+                            </path>
+                        </svg>
+
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight whitespace-nowrap">
+                            Bank Verification
+                        </span>
+                    </div>
+
+                </div>
+            </section>
+            <!-- END: Added Trust Strip -->
+            <section class="py-12 bg-blue-50/30 text-center">
+                <h2 class="text-2xl font-extrabold text-primary mb-2">Remember the problems we listed?</h2>
+                <p class="text-xs text-gray-400 mb-8">Here's how Gathr solves every single one</p>
+                <main class="max-w-md mx-auto space-y-4">
+
+                    <!-- Feature 1: Live dashboard -->
+                    <section class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                        <div class="bg-sky-100 w-11 h-11 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" stroke-width="2"
+                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-[#1a202c] text-lg font-bold leading-tight mb-2">
+                            Live dashboard — who paid, who didn't
+                        </h2>
+                        <p class="text-[#718096] text-sm leading-relaxed">
+                            Every contributor's status in real time. Paid, half-paid, unpaid — always accurate.
+                        </p>
+                    </section>
+
+                    <!-- Feature 2: Half-payment support -->
+                    <section class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                        <div class="bg-sky-100 w-11 h-11 rounded-xl flex items-center justify-center mb-4">
+                            <span class="text-blue-600 font-bold text-xl">½</span>
+                        </div>
+                        <h2 class="text-[#1a202c] text-lg font-bold leading-tight mb-2">
+                            Half-payment support
+                        </h2>
+                        <p class="text-[#718096] text-sm leading-relaxed">
+                            Pay 50% now, rest before deadline. System tracks both automatically.
+                        </p>
+                    </section>
+
+                    <!-- Feature 3: Auto-Smart reminder -->
+                    <section class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                        <div class="bg-sky-100 w-11 h-11 rounded-xl flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h2 class="text-[#1a202c] text-lg font-bold leading-tight mb-2">
+                            Auto-Smart reminder text— we chase for you
+                        </h2>
+                        <p class="text-[#718096] text-sm leading-relaxed">
+                            Smart reminders text at T-7d, T-3d, T-1d, T-6h. Only unpaid people receive them.
+                        </p>
+                    </section>
+
+                    <!-- Feature 4: Instant digital ticket & QR receipt -->
+                    <section class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                        <div class="bg-sky-100 w-11 h-11 rounded-xl flex items-center justify-center mb-4">
+                            <div class="bg-green-400 rounded-full p-1.5">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="3"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="text-[#1a202c] text-lg font-bold leading-tight mb-2">
+                            Instant digital ticket & QR receipt
+                        </h2>
+                        <p class="text-[#718096] text-sm leading-relaxed">
+                            Every payment generates a tamper-proof QR ticket instantly. Show at the door. Download as
+                            PDF.
+                        </p>
+                    </section>
+
+                    <!-- Feature 5: WhatsApp nudge tool -->
+                    <section class="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                        <div class="bg-sky-100 w-11 h-11 rounded-xl flex items-center justify-center mb-4">
+                            <div class="bg-green-400 rounded-full p-1.5">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="3"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 class="text-[#1a202c] text-lg font-bold leading-tight mb-2">
+                            WhatsApp nudge tool
+                        </h2>
+                        <p class="text-[#718096] text-sm leading-relaxed">
+                            One tap writes and sends a reminder to all unpaid members with your link.
+                        </p>
+                    </section>
+
+                </main>
+            </section>
+            <!-- END: Feature List Section -->
+            <!-- BEGIN: How It Works -->
+            <section class="py-12 text-center">
+                <div class="px-6">
+                    <div class="inline-block bg-blue-50 text-primary text-[10px] font-bold px-3 py-1 rounded-full mb-4">
+                        How it works</div>
+                    <h2 class="text-xl font-extrabold mb-1">4 steps. Done in 60 seconds</h2>
+                    <p class="text-xs text-gray-500 mb-12">From creation to payout — Gathr runs the whole process so you
+                        don't have to</p>
+                    <div class="space-y-12 text-left relative">
+                        <!-- Connecting Line -->
+                        <div class="absolute left-6 top-8 bottom-8 w-0.5 bg-blue-100 z-0"></div>
+                        <!-- Step 1 -->
+                        <div class="flex items-start space-x-6 relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-lg shadow-blue-200">
+                                1</div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-1">Organiser creates a link</h4>
+                                <p class="text-xs text-gray-500 mb-3 leading-relaxed">Name the collection or event. Set
+                                    amount, group size, deadline. Choose if half-payment is allowed. Takes 45 seconds —
+                                    no technical skill needed.</p>
+                                <div
+                                    class="inline-flex items-center text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded">
+                                    <span class="mr-1">✓</span> Under 45 seconds
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="flex items-start space-x-6 relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-lg shadow-blue-200">
+                                2</div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-1">Share to group</h4>
+                                <p class="text-xs text-gray-500 mb-3 leading-relaxed">Drop the link in WhatsApp,
+                                    Telegram, Instagram — anywhere. Gathr auto-builds the message with purpose, amount
+                                    and deadline. You just paste and send.</p>
+                                <div
+                                    class="inline-flex items-center text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded">
+                                    <span class="mr-1">✓</span> Message auto-written
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="flex items-start space-x-6 relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-lg shadow-blue-200">
+                                3</div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-1">Members pay — no account needed</h4>
+                                <p class="text-xs text-gray-500 mb-3 leading-relaxed">Tap the link -&gt; enter name
+                                    -&gt; pay with card, bank transfer or USSD. Under 60 seconds. No app download. No
+                                    sign up. Instant digital receipt.</p>
+                                <div
+                                    class="inline-flex items-center text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded">
+                                    <span class="mr-1">✓</span> Zero fake receipts
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Step 4 -->
+                        <div class="flex items-start space-x-6 relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-lg shadow-blue-200">
+                                4</div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-1">Dashboard updates + payout</h4>
+                                <p class="text-xs text-gray-500 mb-3 leading-relaxed">See every payment live.
+                                    Auto-reminders chase unpaid members. When the deadline hits, your money lands.</p>
+                                <div
+                                    class="inline-flex items-center text-[10px] font-bold text-green-500 bg-green-50 px-2 py-1 rounded">
+                                    <span class="mr-1">✓</span> Same day payout
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- END: How It Works -->
+            <!-- BEGIN: Trust Strip Dark -->
+            <!-- Security Banner -->
+            <section class="w-full max-w-md bg-security-navy border-t-2 border-b-2 border-security-gold flex items-center overflow-hidden">
+                <div class="flex items-center justify-between py-4 animate-marquee-slow">
+
+                    <!-- Left: Protected by Paystack -->
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight">
+                            Protected by Paystack
+                        </span>
+                    </div>
+
+                    <!-- Right: Bank Verification + Icon -->
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <!-- Icon -->
+                        <svg aria-hidden="true" class="w-6 h-6 text-blue-400 rotate-12 flex-shrink-0" fill="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 3.75a3 3 0 00-3 3v.75h21v-.75a3 3 0 00-3-3h-15z"></path>
+                            <path clip-rule="evenodd" fill-rule="evenodd"
+                                d="M22.5 9.75h-21v7.5a3 3 0 003 3h15a3 3 0 003-3v-7.5zm-18 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z">
+                            </path>
+                        </svg>
+
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight whitespace-nowrap">
+                            Bank Verification
+                        </span>
+                    </div>
+
+                    <!-- Duplicate for seamless loop -->
+                    <div class="flex items-center gap-2 flex-shrink-0 ml-8">
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight">
+                            Protected by Paystack
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <svg aria-hidden="true" class="w-6 h-6 text-blue-400 rotate-12 flex-shrink-0" fill="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 3.75a3 3 0 00-3 3v.75h21v-.75a3 3 0 00-3-3h-15z"></path>
+                            <path clip-rule="evenodd" fill-rule="evenodd"
+                                d="M22.5 9.75h-21v7.5a3 3 0 003 3h15a3 3 0 003-3v-7.5zm-18 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z">
+                            </path>
+                        </svg>
+
+                        <span class="text-white text-sm md:text-base font-medium tracking-tight whitespace-nowrap">
+                            Bank Verification
+                        </span>
+                    </div>
+
+                </div>
+            </section>
+            <!-- END: Trust Strip Dark -->
+            <!-- BEGIN: Organizer Levels -->
+            <section class="py-12 bg-white">
+                <div class="px-6">
+                    <div class="inline-block bg-blue-50 text-primary text-[10px] font-bold px-3 py-1 rounded-full mb-4">
+                        ORGANISER LEVELS</div>
+                    <h2 class="text-2xl font-extrabold mb-4">The more you collect, <br /> the more you're trusted</h2>
+                    <p class="text-xs text-gray-500 mb-10 leading-relaxed">Your badge shows on every collection page.
+                        Higher levels mean more contributors willing to pay — because they trust you.</p>
+                    <div class="space-y-4">
+                        <!-- Level 1 -->
+                        <div class="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-xl">
+                                    🌱</div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 tracking-wider">LEVEL 1</p>
+                                    <h4 class="font-bold text-sm">Starter</h4>
+                                    <p class="text-[10px] text-gray-500 mb-3">First collection + bank verified</p>
+                                    <div
+                                        class="inline-block bg-blue-50 text-primary text-[9px] font-bold px-3 py-1 rounded-full border border-blue-100">
+                                        Basic Trust Badge ✓</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Level 2 -->
+                        <div class="bg-blue-50/30 border border-blue-100 p-6 rounded-3xl shadow-sm">
+                            <div class="flex items-start space-x-4">
+                                <div
+                                    class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center text-xl">
+                                    ⚡</div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 tracking-wider">LEVEL 2</p>
+                                    <h4 class="font-bold text-sm text-blue-900">Rising Rep</h4>
+                                    <p class="text-[10px] text-gray-500 mb-3">3+ collections or ₦50,000 total</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <div
+                                            class="inline-block bg-primary text-white text-[9px] font-bold px-3 py-1 rounded-full">
+                                            Verified checkmark ✓</div>
+                                        <div
+                                            class="inline-block bg-white text-primary text-[9px] font-bold px-3 py-1 rounded-full border border-blue-100">
+                                            Stats shown on page</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Level 3 -->
+                        <div class="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-xl">
+                                    🔥</div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 tracking-wider">LEVEL 3</p>
+                                    <h4 class="font-bold text-sm">Campus Mogul</h4>
+                                    <p class="text-[10px] text-gray-500 mb-3">₦200,000+ total collected</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <div
+                                            class="inline-block bg-blue-50 text-primary text-[9px] font-bold px-3 py-1 rounded-full border border-blue-100">
+                                            Silver verified badge</div>
+                                        <div
+                                            class="inline-block bg-blue-50 text-primary text-[9px] font-bold px-3 py-1 rounded-full border border-blue-100">
+                                            Campus leaderboard</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Level 4 -->
+                        <div class="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-xl">
+                                    👑</div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 tracking-wider">LEVEL 4</p>
+                                    <h4 class="font-bold text-sm">Class Legend</h4>
+                                    <p class="text-[10px] text-gray-500 mb-3">10+ collections or ₦500,000+</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <div
+                                            class="inline-block bg-yellow-100 text-yellow-700 text-[9px] font-bold px-3 py-1 rounded-full border border-yellow-200">
+                                            Gold crown badge</div>
+                                        <div
+                                            class="inline-block bg-blue-50 text-primary text-[9px] font-bold px-3 py-1 rounded-full border border-blue-100">
+                                            School leaderboard top 10</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Level 5 -->
+                        <div class="bg-white border border-gray-100 p-6 rounded-3xl shadow-sm">
+                            <div class="flex items-start space-x-4">
+                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-xl">💎
+                                </div>
+                                <div>
+                                    <p class="text-[9px] font-bold text-gray-400 tracking-wider">LEVEL 5</p>
+                                    <h4 class="font-bold text-sm">Gathr OG</h4>
+                                    <p class="text-[10px] text-gray-500 mb-3">₦1,000,000+ or national top 3</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <div
+                                            class="inline-block bg-primary text-white text-[9px] font-bold px-3 py-1 rounded-full">
+                                            Animated badge</div>
+                                        <div
+                                            class="inline-block bg-green-50 text-green-600 text-[9px] font-bold px-3 py-1 rounded-full border border-green-100">
+                                            0% fee forever</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- END: Organizer Levels -->
+            <!-- BEGIN: FAQs -->
+            <section class="py-12 bg-gray-50">
+                <div class="px-6">
+                    <div class="text-center mb-10">
+                        <div
+                            class="inline-block bg-blue-50 text-primary text-[10px] font-bold px-3 py-1 rounded-full mb-4">
+                            FAQs</div>
+                        <h2 class="text-2xl font-extrabold">Questions we get all the time</h2>
+                    </div>
+                    <div class="space-y-2">
+                        <!-- FAQ Item 1 -->
+                        <div class="accordion-item bg-white border border-gray-100 rounded-2xl overflow-hidden active">
+                            <button
+                                class="w-full flex items-center justify-between p-5 text-left font-bold text-sm text-gray-700"
+                                onclick="this.parentElement.classList.toggle('active')">
+                                Do contributors need to create an account?
+                                <svg class="chevron w-4 h-4 text-gray-400 transition-transform" fill="none"
+                                    stroke="currentColor" viewbox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content px-5 pb-5 text-xs text-gray-500 leading-relaxed">
+                                No. Contributors simply click your link, enter their name and pay. No apps, no logins,
+                                no stress.
+                            </div>
+                        </div>
+                        <!-- FAQ Item 2 -->
+                        <div class="accordion-item bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                            <button
+                                class="w-full flex items-center justify-between p-5 text-left font-bold text-sm text-gray-700"
+                                onclick="this.parentElement.classList.toggle('active')">
+                                How does the money reach the organiser?
+                                <svg class="chevron w-4 h-4 text-gray-400 transition-transform" fill="none"
+                                    stroke="currentColor" viewbox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content px-5 pb-5 text-xs text-gray-500 leading-relaxed">
+                                Payouts are processed automatically to your verified bank account when you request them
+                                or at the end of your collection deadline.
+                            </div>
+                        </div>
+                        <!-- FAQ Item 3 -->
+                        <div class="accordion-item bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                            <button
+                                class="w-full flex items-center justify-between p-5 text-left font-bold text-sm text-gray-700"
+                                onclick="this.parentElement.classList.toggle('active')">
+                                What if someone can't pay the full amount?
+                                <svg class="chevron w-4 h-4 text-gray-400 transition-transform" fill="none"
+                                    stroke="currentColor" viewbox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content px-5 pb-5 text-xs text-gray-500 leading-relaxed">
+                                Organisers can enable "Part-payments" allowing members to pay in installments.
+                            </div>
+                        </div>
+                        <!-- FAQ Item 4 -->
+                        <div class="accordion-item bg-white border border-gray-100 rounded-2xl overflow-hidden">
+                            <button
+                                class="w-full flex items-center justify-between p-5 text-left font-bold text-sm text-gray-700"
+                                onclick="this.parentElement.classList.toggle('active')">
+                                Can people pay without internet using USSD?
+                                <svg class="chevron w-4 h-4 text-gray-400 transition-transform" fill="none"
+                                    stroke="currentColor" viewbox="0 0 24 24">
+                                    <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content px-5 pb-5 text-xs text-gray-500 leading-relaxed">
+                                Yes, our checkout supports USSD, Bank Transfers, and Cards.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- END: FAQs -->
+            <!-- BEGIN: Final CTA -->
+            <section class="py-12 bg-primary text-center text-white relative overflow-hidden">
+                <div
+                    class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/10 to-transparent">
+                </div>
+                <div class="relative z-10 px-6">
+                    <div class="inline-block bg-white/20 px-4 py-1 rounded-full text-[10px] font-bold mb-6">🚀 Get
+                        Started Free</div>
+                    <h2 class="text-4xl font-extrabold mb-4">Stop chasing.<br />Start Gathr-ing.</h2>
+                    <p class="text-sm text-blue-100 mb-10 px-4">Create your first collection, event or business page in
+                        60 seconds. No screenshots. No chaos. Just one link that does everything.</p>
+                    <div class="max-w-xs mx-auto space-y-4">
+                        <input
+                            class="w-full bg-white/10 border-white/20 rounded-2xl py-4 px-6 text-white placeholder:text-blue-100 focus:ring-white focus:border-white"
+                            placeholder="Your phone number" type="tel" />
+                        <button
+                            class="w-full bg-white text-primary py-4 rounded-2xl font-extrabold flex items-center justify-center space-x-2 shadow-xl">
+                            <span>Create your first a collections</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="mt-6 text-[10px] text-blue-200 font-medium">
+                        🔒 Secured by Paystack · Free to create <br /> No app download · No account to pay
+                    </p>
+                </div>
+            </section>
+            <!-- END: Final CTA -->
+            <!-- BEGIN: Footer -->
+            <footer class="bg-[#0a1929] text-gray-400 py-8 flex flex-col text-left" data-purpose="main-footer">
+                <!-- Top Section: Logo and Description -->
+                <div class="mb-10" data-purpose="footer-branding">
+                    <div class="flex items-center mb-4">
+                        <h2 class="text-white text-3xl font-bold logo-text">GATH<span class="text-sky-500">R</span></h2>
+                    </div>
+                    <p class="text-gray-300 text-lg mb-6 leading-relaxed">
+                        Group payment never been easier . One link .Zero stress
+                    </p>
+                    <!-- Contact Information -->
+                    <div class="space-y-1 text-gray-400">
+                        <p>Gathr@gmail.com</p>
+                        <p>08051564437 .07082263502</p>
+                    </div>
+                </div>
+                <!-- Middle Section: Navigation Links -->
+                <div class="space-y-12" data-purpose="footer-navigation">
+                    <!-- Product Links -->
+                    <nav aria-label="Product links">
+                        <h3 class="text-white font-semibold text-lg uppercase tracking-wider mb-6">PRODUCT</h3>
+                        <ul class="space-y-4">
+                            <li><a class="hover:text-white transition-colors" href="#">Group Collection</a></li>
+                            <li><a class="hover:text-white transition-colors" href="#">Event Ticketing</a></li>
+                            <li><a class="hover:text-white transition-colors" href="#">Campus Business</a></li>
+                            <li><a class="hover:text-white transition-colors" href="#">Organizer Dashboard</a></li>
+                        </ul>
+                    </nav>
+                    <!-- Company Links -->
+                    <nav aria-label="Company links">
+                        <h3 class="text-white font-semibold text-lg uppercase tracking-wider mb-6">Company</h3>
+                        <ul class="space-y-4">
+                            <li><a class="hover:text-white transition-colors" href="#">About Gathr</a></li>
+                            <li><a class="hover:text-white transition-colors" href="#">Privacy Policy</a></li>
+                            <li><a class="hover:text-white transition-colors" href="#">Terms of Service</a></li>
+                            <li><a class="hover:text-white transition-colors" href="#">Contact Us</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <!-- Bottom Section: Copyright and Attribution -->
+                <div class="mt-12 pt-8 border-t border-gray-800" data-purpose="footer-bottom">
+                    <div class="flex flex-col space-y-4">
+                        <div>
+                            <p class="text-sm">© 2026 Gathr</p>
+                            <p class="text-sm">Built for Nigerian campus life</p>
+                        </div>
+                        <div class="text-sm opacity-60">
+                            Built By MasqIT Solutions
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            <!-- END: Footer -->
+    </body>
 </template>
