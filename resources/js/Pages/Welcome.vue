@@ -1,3 +1,7 @@
+<script setup>
+import { Head, Link } from '@inertiajs/vue3';
+</script>
+
 <template>
      <body
         class="bg-white font-['Plus_Jakarta_Sans, sans-serif'] antialiased text-gray-900 overflow-x-hidden flex flex-col">
@@ -9,11 +13,11 @@
                 </h1>
             </div>
             <div class="flex items-center gap-6">
-                <a class="text-sm font-bold text-gray-600 hover:text-gray-900" href="#">Sign in</a>
-                <a class="bg-brand-blue hover:bg-brand-darkBlue text-white px-5 py-2.5 rounded-full text-sm font-bold flex items-center transition-all duration-200"
-                    href="register.html">
+                <Link class="text-sm font-bold text-gray-600 hover:text-gray-900" :href="route('login')">Sign in</Link>
+                <Link class="bg-brand-blue hover:bg-brand-darkBlue text-white px-5 py-2.5 rounded-full text-sm font-bold flex items-center transition-all duration-200"
+                    :href="route('register')">
                     Get Started <span class="ml-2">→</span>
-                </a>
+                </Link>
             </div>
         </header>
 

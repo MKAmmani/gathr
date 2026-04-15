@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -16,18 +17,33 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->name('register.store');
 
-    //Route::get('otp', [RegisteredUserController::class, 'otp'])
-        //->name('otp');
+    // Profile setup routes
+    Route::get('profile', [RegisteredUserController::class, 'showProfile'])
+        ->name('profile.show');
 
-        Route::get('/otp', function () {
-    return Inertia::render('Auth/Otp');
-})->name('otp');
+    Route::post('profile', [RegisteredUserController::class, 'storeProfile'])
+        ->name('profile.store');
 
-Route::get('/pro', function () {
-    return Inertia::render('Auth/profile');
-})->name('pro');
+    // Registration OTP routes
+    Route::get('otp', [OtpController::class, 'show'])->name('otp');
+    Route::post('otp/verify', [OtpController::class, 'verify'])
+        ->middleware('throttle:10,1')
+        ->name('otp.verify');
+    Route::post('otp/resend', [OtpController::class, 'resend'])
+        ->middleware('throttle:3,1')
+        ->name('otp.resend');
+
+    // Login OTP routes
+    Route::get('otp/login', [OtpController::class, 'loginShow'])->name('otp.login');
+    Route::post('otp/login/verify', [OtpController::class, 'loginVerify'])
+        ->middleware('throttle:10,1')
+        ->name('otp.login.verify');
+    Route::post('otp/login/resend', [OtpController::class, 'loginResend'])
+        ->middleware('throttle:3,1')
+        ->name('otp.login.resend');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

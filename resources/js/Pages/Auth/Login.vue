@@ -24,6 +24,7 @@ const submit = () => {
 </script>
 
 <template>
+    <Head title="Login" />
      <body class="text-on-surface antialiased bg-white">
         <main class="max-w-md mx-auto px-10 pt-24 pb-12">
             <!-- Logo and Intro -->
@@ -40,39 +41,47 @@ const submit = () => {
                     easier</p>
             </section>
             <!-- Registration Form -->
-            <form class="space-y-6">
+            <form @submit.prevent="submit" class="space-y-6">
                 <!-- Email Field -->
                 <div class="space-y-2">
                     <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Email</label>
                     <input
+                        v-model="form.email"
                         class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-[#333333]"
-                        placeholder="Vinciman@gmail.com" type="email" />
+                        placeholder="Vinciman@gmail.com"
+                        type="email"
+                        :disabled="form.processing"
+                    />
+                    <p v-if="form.errors.email" class="text-red-600 text-sm">{{ form.errors.email }}</p>
                 </div>
                 <!-- Password Field -->
                 <div class="space-y-2">
                     <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Password</label>
                     <div class="relative">
                         <input
+                            v-model="form.password"
                             class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-xl tracking-widest"
-                            placeholder="● ● ● ● ● ● ● ●" type="password" />
+                            placeholder="● ● ● ● ● ● ● ●"
+                            type="password"
+                            :disabled="form.processing"
+                        />
                     </div>
+                    <p v-if="form.errors.password" class="text-red-600 text-sm">{{ form.errors.password }}</p>
                 </div>
-                <!-- Continue Button 
-<button class="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#00A2E8] text-white rounded-xl font-bold text-[17px] headline-font active:scale-[0.98] transition-all duration-200 h-[58px]" type="submit">
-            Continue
-            <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
-</button> -->
-                <a href="otp2.html"
+                <!-- Continue Button -->
+                <button
                     class="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#00A2E8] text-white rounded-xl font-bold text-[17px] headline-font active:scale-[0.98] transition-all duration-200 h-[58px]"
-                    type="submit">
+                    :disabled="form.processing"
+                    type="submit"
+                >
                     Continue
                     <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
-                </a>
+                </button>
             </form>
             <!-- Footer Links -->
             <footer class="mt-12 text-center space-y-12">
                 <p class="text-[#757575] font-medium text-[15px] tracking-tight">
-                    Don't have an account ? <a class="text-[#00A2E8] font-bold" href="#">Sign up</a>
+                    Don't have an account ? <Link class="text-[#00A2E8] font-bold" :href="route('register')">Sign up</Link>
                 </p>
                 <div class="space-y-3">
                     <p class="text-[15px] text-[#757575] font-medium tracking-tight">

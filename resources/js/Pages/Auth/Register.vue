@@ -2,23 +2,23 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const form = useForm({
-    name: '',
     email: '',
+    phone: '',
     password: '',
     password_confirmation: '',
 });
 
 const submit = () => {
-    form.post(route('register'), {
+    form.post(route('register.store'), {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
 </script>
 
 <template>
-     <body class="text-on-surface antialiased bg-white">
+    <Head title="Register" />
+    <body class="text-on-surface antialiased bg-white">
         <main class="max-w-md mx-auto px-10 pt-24 pb-12">
-            <!-- Logo and Intro -->
             <section class="text-center mb-10">
                 <h2 class="headline-font text-[28px] font-semibold text-[#333333] leading-tight tracking-tight">
                     Welcome to
@@ -28,68 +28,107 @@ const submit = () => {
                         GATH<span class="text-[#00A2E8]">R</span>
                     </h1>
                 </div>
-                <p class="font-body text-[#757575] text-[15px] font-normal tracking-tight">Group payment never been
-                    easier</p>
+                <p class="font-body text-[#757575] text-[15px] font-normal tracking-tight">
+                    Group payment never been easier
+                </p>
             </section>
-            <!-- Registration Form -->
-            <form class="space-y-6">
-                <!-- Email Field -->
+
+            <div v-if="form.hasErrors" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                <ul class="space-y-1">
+                    <li v-for="(error, key) in form.errors" :key="key" class="text-red-600 text-[14px] font-medium">
+                        {{ error }}
+                    </li>
+                </ul>
+            </div>
+
+            <form class="space-y-6" @submit.prevent="submit">
                 <div class="space-y-2">
                     <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Email</label>
                     <input
+                        v-model="form.email"
                         class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-[#333333]"
-                        placeholder="Vinciman@gmail.com" type="email" />
-                        <p class="text-[13px] text-[#757575] mt-1 font-normal">we’ll send a verification code to this email
+                        placeholder="you@example.com"
+                        type="email"
+                        autocomplete="email"
+                    />
+                    <p class="text-[13px] text-[#757575] mt-1 font-normal">
+                        We'll send a verification code to this email
+                    </p>
+                    <p v-if="form.errors.email" class="text-[13px] text-red-600 mt-1 font-normal">
+                        {{ form.errors.email }}
                     </p>
                 </div>
-                <!-- Phone Number Field -->
+
                 <div class="space-y-2">
                     <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Phone number</label>
                     <div
-                        class="flex overflow-hidden rounded-xl border border-[#E0E8F0] focus-within:ring-1 focus-within:ring-[#00A2E8] focus-within:border-[#00A2E8]">
+                        class="flex overflow-hidden rounded-xl border border-[#E0E8F0] focus-within:ring-1 focus-within:ring-[#00A2E8] focus-within:border-[#00A2E8]"
+                    >
                         <div
-                            class="flex items-center gap-2 px-4 py-4 bg-[#F0F7FA] border-r border-[#E0E8F0] min-w-[90px] justify-center">
-                            <span class="text-[#333333] font-medium text-lg">₦</span>
+                            class="flex items-center gap-2 px-4 py-4 bg-[#F0F7FA] border-r border-[#E0E8F0] min-w-[90px] justify-center"
+                        >
+                            <span class="text-[#333333] font-medium text-lg">NGN</span>
                             <span class="text-[#A0AEC0] font-medium text-[15px]">+234</span>
                         </div>
-                        <input class="flex-1 px-4 py-4 bg-white border-none focus:ring-0 outline-none text-[#333333]"
-                            placeholder="812 345 6789" type="tel" />
+                        <input
+                            v-model="form.phone"
+                            class="flex-1 px-4 py-4 bg-white border-none focus:ring-0 outline-none text-[#333333]"
+                            placeholder="812 345 6789"
+                            type="tel"
+                            autocomplete="tel"
+                        />
                     </div>
+                    <p v-if="form.errors.phone" class="text-[13px] text-red-600 mt-1 font-normal">
+                        {{ form.errors.phone }}
+                    </p>
                 </div>
-                <!-- Password Field -->
+
                 <div class="space-y-2">
                     <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Password</label>
                     <div class="relative">
                         <input
+                            v-model="form.password"
                             class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-xl tracking-widest"
-                            placeholder="● ● ● ● ● ● ● ●" type="password" />
+                            placeholder="********"
+                            type="password"
+                            autocomplete="new-password"
+                        />
                     </div>
+                    <p v-if="form.errors.password" class="text-[13px] text-red-600 mt-1 font-normal">
+                        {{ form.errors.password }}
+                    </p>
                 </div>
-                <!-- Confirm Password Field -->
+
                 <div class="space-y-2">
                     <label class="block text-[15px] font-medium text-[#333333] tracking-tight">Confirm password</label>
                     <div class="relative">
                         <input
+                            v-model="form.password_confirmation"
                             class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-xl tracking-widest"
-                            placeholder="● ● ● ● ● ● ● ●" type="password" />
+                            placeholder="********"
+                            type="password"
+                            autocomplete="new-password"
+                        />
                     </div>
+                    <p v-if="form.errors.password_confirmation" class="text-[13px] text-red-600 mt-1 font-normal">
+                        {{ form.errors.password_confirmation }}
+                    </p>
                 </div>
-                <!-- Continue Button 
-<button class="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#00A2E8] text-white rounded-xl font-bold text-[17px] headline-font active:scale-[0.98] transition-all duration-200 h-[58px]" type="submit">
-            Continue
-            <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
-</button> -->
-                <a href="otp2.html"
+
+                <button
                     class="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#00A2E8] text-white rounded-xl font-bold text-[17px] headline-font active:scale-[0.98] transition-all duration-200 h-[58px]"
-                    type="submit">
+                    type="submit"
+                    :disabled="form.processing"
+                >
                     Continue
                     <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
-                </a>
+                </button>
             </form>
-            <!-- Footer Links -->
+
             <footer class="mt-12 text-center space-y-12">
                 <p class="text-[#757575] font-medium text-[15px] tracking-tight">
-                    Already have an account ? <a class="text-[#00A2E8] font-bold" href="#">Sign in</a>
+                    Already have an account ?
+                    <Link class="text-[#00A2E8] font-bold" :href="route('login')">Sign in</Link>
                 </p>
                 <div class="space-y-3">
                     <p class="text-[15px] text-[#757575] font-medium tracking-tight">
