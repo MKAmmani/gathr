@@ -20,11 +20,11 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [RegisteredUserController::class, 'store'])
         ->name('register.store');
 
-    // Profile setup routes
-    Route::get('profile', [RegisteredUserController::class, 'showProfile'])
+    // Profile setup routes (registration flow — separate from authenticated /profile)
+    Route::get('register/setup', [RegisteredUserController::class, 'showProfile'])
         ->name('profile.show');
 
-    Route::post('profile', [RegisteredUserController::class, 'storeProfile'])
+    Route::post('register/setup', [RegisteredUserController::class, 'storeProfile'])
         ->name('profile.store');
 
     // Registration OTP routes

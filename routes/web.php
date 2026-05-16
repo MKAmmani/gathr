@@ -56,6 +56,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/settings', function () {
+        $user = request()->user();
+        $participationCount = $user->participations()->count() + $user->collections()->count();
+        $tiers = [
+            ['name' => 'Starter', 'level' => 1, 'min' => 0],
+            ['name' => 'Rising Rep', 'level' => 2, 'min' => 2],
+            ['name' => 'Campus Mogul', 'level' => 3, 'min' => 4],
+        ];
+        $current = $tiers[0];
+        foreach ($tiers as $tier) {
+            if ($participationCount >= $tier['min']) $current = $tier;
+        }
+        return \Inertia\Inertia::render('Settings', [
+            'user' => ['name' => $user->name, 'email' => $user->email],
+            'reputation' => ['name' => $current['name'], 'level' => $current['level'], 'progress' => 0, 'next_name' => null, 'remaining' => 0],
+        ]);
+    })->name('settings');
 });
 
 // Payment/Withdrawal routes

@@ -1,5 +1,5 @@
 <script setup>
-import { usePage } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 import { computed, ref, provide } from 'vue';
 
 const props = defineProps({
@@ -155,14 +155,11 @@ provide('sidebarState', {
 
             <!-- Footer Section: Logout -->
             <div class="mt-4 px-4 pt-4 border-t border-gray-100">
-                <form action="/logout" method="POST" class="w-full">
-                    <input type="hidden" name="_token" :value="csrfToken">
-                    <button type="submit"
-                        class="text-red-600 flex items-center px-4 py-3 rounded-xl transition-all duration-150 hover:bg-red-50 w-full text-left">
-                        <span class="material-symbols-outlined mr-4 text-xl" data-icon="logout">logout</span>
-                        <span class="text-sm font-semibold">Log out</span>
-                    </button>
-                </form>
+                <button @click="router.post('/logout')"
+                    class="text-red-600 flex items-center px-4 py-3 rounded-xl transition-all duration-150 hover:bg-red-50 w-full text-left">
+                    <span class="material-symbols-outlined mr-4 text-xl" data-icon="logout">logout</span>
+                    <span class="text-sm font-semibold">Log out</span>
+                </button>
             </div>
         </aside>
     </div>
