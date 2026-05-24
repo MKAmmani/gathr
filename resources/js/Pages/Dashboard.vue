@@ -389,7 +389,12 @@ const handleLogout = () => {
                                 <div class="h-4 w-[1px] bg-[#E2E8F0]"></div>
                                 <div class="flex items-center gap-1">
                                     <span class="material-symbols-outlined text-[14px]">wallet</span>
-                                    <span class="text-warning">{{ formatMoney(collection.amount_raised) }}</span> raised
+                                    <template v-if="collection.available_balance !== collection.amount_raised">
+                                        <span class="text-warning">{{ formatMoney(collection.available_balance) }}</span> bal
+                                    </template>
+                                    <template v-else>
+                                        <span class="text-warning">{{ formatMoney(collection.amount_raised) }}</span> raised
+                                    </template>
                                 </div>
                                 <div class="h-4 w-[1px] bg-[#E2E8F0]"></div>
                                 <div class="flex items-center gap-1">

@@ -43,10 +43,9 @@ class CollectionIndexController extends Controller
                 $isExpired = $collection->ends_at->isPast();
             }
 
-            // Count participants including guest payments
-            $participantPayments = $collection->participants->sum('amount_paid');
-            $guestPayments = $collection->payments->whereNull('user_id')->sum('amount');
-            $totalRaised = $participantPayments + $guestPayments;
+            // Use model attributes for total raised and available balance
+            $totalRaised = $collection->total_raised;
+            $availableBalance = $collection->available_balance;
 
             // Count guest payments as "paid" contributors
             $guestPaymentCount = $collection->payments->whereNull('user_id')->count();
@@ -73,6 +72,7 @@ class CollectionIndexController extends Controller
                 'created_at' => $collection->created_at->format('d M Y'),
                 'paid_count' => $totalPaidCount,
                 'raised_amount' => $totalRaised,
+                'available_balance' => $collection->available_balance,
                 'days_left' => $daysLeft,
                 'is_expired' => $isExpired,
                 'progress_percentage' => round($progressPercentage, 1),

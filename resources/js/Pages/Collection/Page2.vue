@@ -25,10 +25,10 @@ const form = useForm({
     participant_goal: props.collectionData.participant_goal || '',
     starts_at: props.collectionData.starts_at || '',
     ends_at: props.collectionData.ends_at || '',
-    allow_half_payment: props.collectionData.allow_half_payment ?? true,
+    allow_half_payment: props.collectionData.allow_half_payment ?? false,
     anonymous_payments: props.collectionData.anonymous_payments ?? false,
     organizer_pay_charges: props.collectionData.organizer_pay_charges ?? false,
-    allow_custom_amount: props.collectionData.allow_custom_amount ?? true,
+    allow_custom_amount: props.collectionData.allow_custom_amount ?? false,
 });
 
 const submit = () => {
@@ -85,6 +85,11 @@ const toggleSidebar = () => {
             <header class="mb-10">
                 <h2 class="font-bold text-[20px] text-on-surface tracking-tight">Collection Settings</h2>
             </header>
+
+            <!-- General Error Message -->
+            <div v-if="$page.props.flash.error" class="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
+                <p class="text-[14px] text-red-600 font-medium">{{ $page.props.flash.error }}</p>
+            </div>
             <form class="space-y-6">
                 <!-- Amount Section -->
                 <div class="space-y-2">
@@ -95,11 +100,12 @@ const toggleSidebar = () => {
                         </div>
                         <input
                             v-model="form.contribution_amount"
-                            class="flex-1 px-0 outline-none text-[16px] text-slate-600 placeholder:text-slate-300 border-none focus:ring-0"
+                            class="flex-1 px-0 outline-none text-[16px] placeholder:text-slate-300 border-none focus:ring-0"
                             placeholder="2000"
                             type="number"
                         />
                     </div>
+                    <p v-if="form.errors.contribution_amount" class="text-[13px] text-red-600 mt-1 font-normal">{{ form.errors.contribution_amount }}</p>
                 </div>
                 <!-- Group Size Section -->
                 <div class="space-y-2">
@@ -108,44 +114,44 @@ const toggleSidebar = () => {
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">group</span>
                         <input
                             v-model="form.participant_goal"
-                            class="w-full h-12 pl-12 pr-4 bg-white border border-[#E8F5FD] rounded-xl outline-none text-[16px] text-slate-400 placeholder:text-slate-300"
+                            class="w-full h-12 pl-12 pr-4 bg-white border border-[#E8F5FD] rounded-xl outline-none text-[16px] placeholder:text-slate-300"
                             placeholder="50"
                             type="number"
                         />
                     </div>
                     <p class="text-[12px] text-slate-400 ml-1">Leave blank for unlimited amount</p>
+                    <p v-if="form.errors.participant_goal" class="text-[13px] text-red-600 mt-1 font-normal">{{ form.errors.participant_goal }}</p>
                 </div>
                 <!-- Date Range Section -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="block text-[14px] font-medium text-on-surface">Start date</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600" style="font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;">calendar_month</span>
-                            <input
-                                v-model="form.starts_at"
-                                class="w-full h-12 pl-10 pr-2 bg-white border border-[#E8F5FD] rounded-xl outline-none text-[14px] text-slate-400 placeholder:text-slate-300"
-                                placeholder="11 Mar 2026"
-                                type="date"
-                                onfocus="(
-                                this.type='date')"
-                                onblur="(this.type='text')"
-                            />
+                <div class="space-y-2">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-[14px] font-medium text-on-surface">Start date</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600" style="font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;">calendar_month</span>
+                                <input
+                                    v-model="form.starts_at"
+                                    class="w-full h-12 pl-10 pr-2 bg-white border border-[#E8F5FD] rounded-xl outline-none text-[14px] placeholder:text-slate-300"
+                                    placeholder="11 Mar 2026"
+                                    type="date"
+                                />
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[14px] font-medium text-on-surface">End Date</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600" style="font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;">calendar_month</span>
+                                <input
+                                    v-model="form.ends_at"
+                                    class="w-full h-12 pl-10 pr-2 bg-white border border-[#E8F5FD] rounded-xl outline-none text-[14px] placeholder:text-slate-300"
+                                    placeholder="11 Mar 2026"
+                                    type="date"
+                                />
+                            </div>
                         </div>
                     </div>
-                    <div class="space-y-2">
-                        <label class="block text-[14px] font-medium text-on-surface">End Date</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600" style="font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;">calendar_month</span>
-                            <input
-                                v-model="form.ends_at"
-                                class="w-full h-12 pl-10 pr-2 bg-white border border-[#E8F5FD] rounded-xl outline-none text-[14px] text-slate-400 placeholder:text-slate-300"
-                                placeholder="11 Mar 2026"
-                                type="date"
-                                onfocus="(this.type='date')"
-                                onblur="(this.type='text')"
-                            />
-                        </div>
-                    </div>
+                    <p v-if="form.errors.starts_at" class="text-[13px] text-red-600 mt-1 font-normal">{{ form.errors.starts_at }}</p>
+                    <p v-if="form.errors.ends_at" class="text-[13px] text-red-600 mt-1 font-normal">{{ form.errors.ends_at }}</p>
                 </div>
                 <!-- Toggles Section -->
                 <div class="bg-white border border-[#E8F5FD] rounded-xl overflow-hidden">
@@ -158,7 +164,6 @@ const toggleSidebar = () => {
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input
                                 v-model="form.allow_half_payment"
-                                checked
                                 class="sr-only peer"
                                 type="checkbox"
                             />
@@ -204,7 +209,6 @@ const toggleSidebar = () => {
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input
                                 v-model="form.allow_custom_amount"
-                                checked
                                 class="sr-only peer"
                                 type="checkbox"
                             />

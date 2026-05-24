@@ -126,7 +126,7 @@ class CollectionController extends Controller
     public function live(Collection $collection): Response
     {
         $halfPaymentAmount = $collection->contribution_amount > 0 ? ceil($collection->contribution_amount / 2) : 0;
-        $feePercentage = 2.5; // Gathr 1% + Flutterwave 1.5%
+        $feePercentage = 2.0; // Gathr 0.5% + Gateway 1.5%
         $feeAmount = $collection->contribution_amount > 0 ? ceil($collection->contribution_amount * (1 + ($feePercentage / 100))) : 0;
 
         // Generate URL slug from collection name
@@ -207,9 +207,7 @@ class CollectionController extends Controller
         $totalPaidCount = $paidCount + $guestPaidCount;
         $totalHalfPaidCount = $halfPaidCount + $guestHalfPaidCount;
 
-        $participantPayments = $allParticipants->sum('amount_paid');
-        $guestPaymentAmounts = $guestPayments->sum('amount');
-        $raisedAmount = $participantPayments + $guestPaymentAmounts;
+        $raisedAmount = $collection->total_raised;
 
         $daysLeft = 0;
         $isExpired = false;

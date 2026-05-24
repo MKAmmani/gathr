@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collection;
-use App\Models\CollectionParticipation;
 use App\Models\CollectionPayment;
 use App\Models\GuestPayment;
+use App\Models\Withdrawal;
+use App\Services\FlutterwaveService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -15,6 +16,10 @@ use Inertia\Response;
 
 class GuestPaymentController extends Controller
 {
+    public function __construct(private readonly FlutterwaveService $flutterwave)
+    {
+    }
+
     /**
      * Display the payment page.
      */
@@ -29,7 +34,6 @@ class GuestPaymentController extends Controller
             ? ceil($collection->contribution_amount / 2)
             : 0;
 
-        // Get recent payers for avatar display
         $recentPayers = $collection->payments()
             ->orderByDesc('paid_at')
             ->limit(4)
@@ -38,31 +42,33 @@ class GuestPaymentController extends Controller
                 $name = $payment->customer_name ?? $payment->user?->name ?? '?';
                 $initials = strtoupper(substr($name, 0, 2));
                 return [
-                    'name' => $name,
+                    'name'     => $name,
                     'initials' => $initials ?: '?',
                 ];
             });
 
-        // Count total paid (participants + guest payments)
-        $paidParticipants = $collection->participants->where('is_paid', true)->count();
+        $paidParticipants  = $collection->participants->where('is_paid', true)->count();
         $guestPaymentCount = $collection->payments->whereNull('user_id')->count();
-        $totalPaid = $paidParticipants + $guestPaymentCount;
+        $totalPaid         = $paidParticipants + $guestPaymentCount;
 
         return Inertia::render('guest/Pay', [
             'collection' => [
-                'id' => $collection->id,
-                'name' => $collection->name,
-                'slug' => $slug,
-                'icon' => $collection->icon ?? 'group',
-                'contribution_amount' => $collection->contribution_amount,
-                'half_payment_amount' => $halfPaymentAmount,
-                'allow_custom_amount' => $collection->allow_custom_amount,
-                'total_paid' => $totalPaid,
-                'participant_goal' => $collection->participant_goal,
-                'recent_payers' => $recentPayers,
+                'id'                   => $collection->id,
+                'name'                 => $collection->name,
+                'slug'                 => $slug,
+                'icon'                 => $collection->icon ?? 'group',
+                'contribution_amount'  => $collection->contribution_amount,
+                'half_payment_amount'  => $halfPaymentAmount,
+                'allow_custom_amount'  => $collection->allow_custom_amount,
+                'allow_half_payment'   => $collection->allow_half_payment,
+                'anonymous_payments'   => $collection->anonymous_payments,
+                'organizer_pay_charges'=> $collection->organizer_pay_charges,
+                'total_paid'           => $totalPaid,
+                'participant_goal'     => $collection->participant_goal,
+                'recent_payers'        => $recentPayers,
             ],
             'owner' => [
-                'name' => $collection->owner->name ?? 'Unknown',
+                'name'     => $collection->owner->name ?? 'Unknown',
                 'initials' => strtoupper(substr($collection->owner->name ?? 'U', 0, 2)),
             ],
             'appUrl' => config('app.url'),
@@ -81,81 +87,75 @@ class GuestPaymentController extends Controller
 
         return Inertia::render('guest/PayMethod', [
             'collection' => [
-                'id' => $collection->id,
+                'id'   => $collection->id,
                 'name' => $collection->name,
                 'slug' => $slug,
             ],
-            'amount' => (int) $request->query('amount', 0),
-            'name' => $request->query('name', ''),
+            'amount'      => (int) $request->query('amount', 0),
+            'base_amount' => (int) $request->query('base_amount', 0),
+            'fees'        => (int) $request->query('fees', 0),
+            'name'        => $request->query('name', ''),
             'isAnonymous' => (bool) $request->query('is_anonymous', false),
             'paymentType' => $request->query('payment_type', 'full'),
         ]);
     }
 
     /**
-     * Initialize Monnify payment.
+     * Initialize Flutterwave payment.
      */
     public function initiatePayment(Request $request, string $slug)
     {
         $validated = $request->validate([
-            'amount' => 'required|integer|min:1',
-            'name' => 'nullable|string|max:255',
-            'is_anonymous' => 'boolean',
-            'payment_type' => 'required|in:full,half,custom',
+            'amount'         => 'required|integer|min:1',
+            'base_amount'    => 'required|integer|min:1',
+            'fees'           => 'required|integer|min:0',
+            'name'           => 'nullable|string|max:255',
+            'is_anonymous'   => 'boolean',
+            'payment_type'   => 'required|in:full,half,custom',
             'payment_method' => 'required|in:card,transfer',
         ]);
 
         $parts = explode('-', $slug);
         $collectionId = end($parts);
-
         $collection = Collection::findOrFail($collectionId);
 
         try {
-            // Generate payment references
-            $paymentRef = 'GATHR_' . time() . '_' . strtoupper(substr(md5(uniqid()), 0, 8));
-            $transactionRef = 'GATHR_TXN_' . time() . '_' . strtoupper(substr(md5(uniqid()), 0, 8));
+            $txRef = 'GATHR_' . time() . '_' . strtoupper(substr(md5(uniqid()), 0, 8));
 
-            // Save pending payment data
             $guestPayment = GuestPayment::create([
-                'collection_id' => $collectionId,
-                'payment_reference' => $paymentRef,
-                'transaction_reference' => $transactionRef,
-                'customer_name' => $validated['is_anonymous'] ? 'Anonymous' : ($validated['name'] ?? 'Anonymous'),
-                'customer_email' => $validated['is_anonymous'] ? '' : ($request->customer_email ?? ''),
-                'amount' => $validated['amount'],
-                'is_anonymous' => $validated['is_anonymous'],
-                'payment_type' => $validated['payment_type'],
-                'status' => 'pending',
+                'collection_id'         => $collectionId,
+                'payment_reference'     => $txRef,
+                'transaction_reference' => $txRef,
+                'customer_name'         => $validated['is_anonymous'] ? 'Anonymous' : ($validated['name'] ?? 'Anonymous'),
+                'customer_email'        => $validated['is_anonymous'] ? '' : ($request->customer_email ?? ''),
+                'amount'                => $validated['amount'],
+                'fees'                  => $validated['fees'],
+                'is_anonymous'          => $validated['is_anonymous'],
+                'payment_type'          => $validated['payment_type'],
+                'status'                => 'pending',
             ]);
 
-            // Initialize Monnify payment
-            $monnifyResponse = $this->initializeMonnifyPayment([
-                'amount' => $validated['amount'],
-                'customer_name' => $validated['name'],
-                'customer_email' => $validated['is_anonymous'] ? '' : ($request->customer_email ?? ''),
-                'payment_method' => $validated['payment_method'],
-                'collection_id' => $collectionId,
-                'collection_name' => $collection->name,
-                'payment_type' => $validated['payment_type'],
-                'slug' => $slug,
+            $checkoutUrl = $this->initializeFlutterwavePayment([
+                'tx_ref'           => $txRef,
+                'amount'           => $validated['amount'],
+                'customer_name'    => $validated['name'],
+                'customer_email'   => $validated['is_anonymous'] ? '' : ($request->customer_email ?? ''),
+                'payment_method'   => $validated['payment_method'],
+                'collection_name'  => $collection->name,
+                'collection_id'    => $collectionId,
                 'guest_payment_id' => $guestPayment->id,
-                'payment_reference' => $paymentRef,
-                'transaction_reference' => $transactionRef,
+                'payment_type'     => $validated['payment_type'],
+                'is_anonymous'     => $validated['is_anonymous'] ?? false,
+                'slug'             => $slug,
             ]);
 
-            // Update guest payment with actual Monnify transaction reference
-            $guestPayment->update([
-                'transaction_reference' => $monnifyResponse['transactionRef'],
-            ]);
-
-            // Return checkout URL as JSON
             return response()->json([
-                'checkout_url' => $monnifyResponse['checkoutUrl'],
-                'transaction_ref' => $monnifyResponse['transactionRef'],
+                'checkout_url' => $checkoutUrl,
+                'tx_ref'       => $txRef,
             ]);
         } catch (\Exception $e) {
-            Log::error('Monnify payment initialization failed: ' . $e->getMessage());
-            
+            Log::error('Flutterwave payment initialization failed: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Payment failed: ' . $e->getMessage(),
             ], 500);
@@ -171,70 +171,78 @@ class GuestPaymentController extends Controller
             ->where('payment_reference', $paymentRef)
             ->firstOrFail();
 
-        // Generate receipt data for QR code
         $receiptData = [
-            'ref' => $guestPayment->payment_reference,
-            'amount' => $guestPayment->amount,
+            'ref'        => $guestPayment->payment_reference,
+            'amount'     => $guestPayment->amount,
             'collection' => $guestPayment->collection->name,
-            'date' => $guestPayment->completed_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
+            'date'       => $guestPayment->completed_at?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
         ];
 
-        $qrData = json_encode($receiptData);
-
-        return \Inertia\Inertia::render('guest/Receipt', [
+        return Inertia::render('guest/Receipt', [
             'payment' => [
-                'id' => $guestPayment->id,
-                'payment_reference' => $guestPayment->payment_reference,
+                'id'                    => $guestPayment->id,
+                'payment_reference'     => $guestPayment->payment_reference,
                 'transaction_reference' => $guestPayment->transaction_reference,
-                'customer_name' => $guestPayment->customer_name,
-                'amount' => $guestPayment->amount,
-                'is_anonymous' => $guestPayment->is_anonymous,
-                'payment_type' => $guestPayment->payment_type,
-                'status' => $guestPayment->status,
-                'completed_at' => $guestPayment->completed_at?->format('F j, Y g:i A'),
+                'customer_name'         => $guestPayment->customer_name,
+                'amount'                => $guestPayment->amount,
+                'is_anonymous'          => $guestPayment->is_anonymous,
+                'payment_type'          => $guestPayment->payment_type,
+                'status'                => $guestPayment->status,
+                'completed_at'          => $guestPayment->completed_at?->format('F j, Y g:i A'),
             ],
             'collection' => [
-                'id' => $guestPayment->collection->id,
-                'name' => $guestPayment->collection->name,
-                'slug' => $slug,
-                'icon' => $guestPayment->collection->icon ?? 'group',
+                'id'         => $guestPayment->collection->id,
+                'name'       => $guestPayment->collection->name,
+                'slug'       => $slug,
+                'icon'       => $guestPayment->collection->icon ?? 'group',
                 'owner_name' => $guestPayment->collection->owner->name ?? 'Unknown',
             ],
-            'qr_data' => $qrData,
-            'appUrl' => config('app.url'),
+            'qr_data' => json_encode($receiptData),
+            'appUrl'  => config('app.url'),
         ]);
     }
 
     /**
-     * Handle Monnify webhook/callback.
+     * Handle Flutterwave webhook.
      */
-    public function handleMonnifyWebhook(Request $request)
+    public function handleFlutterwaveWebhook(Request $request)
     {
+        if (! $this->flutterwave->verifyWebhookSignature($request->header('verif-hash'))) {
+            Log::warning('Rejected Flutterwave webhook due to invalid signature.');
+
+            return response()->json(['status' => 'invalid signature'], 401);
+        }
+
         $data = $request->all();
+        Log::info('Flutterwave webhook received', $data);
 
-        Log::info('Monnify webhook received', $data);
+        $event = $data['event'] ?? null;
 
-        // Get transaction reference from webhook data
-        $transactionRef = $data['transactionReference'] 
-            ?? $data['eventData']['transactionReference'] 
-            ?? null;
+        if ($event === 'transfer.completed') {
+            $this->processWithdrawalWebhook($data);
 
-        if ($transactionRef) {
-            $guestPayment = GuestPayment::where('transaction_reference', $transactionRef)->first();
-            
-            if ($guestPayment && $guestPayment->status === 'pending') {
-                $paymentStatus = $data['paymentStatus'] 
-                    ?? $data['eventData']['status'] 
-                    ?? null;
+            return response()->json(['status' => 'success']);
+        }
 
-                if ($paymentStatus === 'SUCCESSFUL' || $paymentStatus === 'PAID' || $paymentStatus === 'SUCCESS') {
-                    $transaction = $this->verifyMonnifyTransaction($transactionRef);
-                    
-                    if ($transaction) {
-                        $this->processSuccessfulPayment($guestPayment, $transaction);
+        if ($event === 'charge.completed') {
+            $txRef         = $data['data']['tx_ref'] ?? null;
+            $status        = strtolower($data['data']['status'] ?? '');
+            $transactionId = (string) ($data['data']['id'] ?? '');
+
+            if ($txRef) {
+                $guestPayment = GuestPayment::where('payment_reference', $txRef)->first();
+
+                if ($guestPayment && $guestPayment->status === 'pending') {
+                    if ($status === 'successful') {
+                        $transaction = $this->flutterwave->verifyTransaction($transactionId);
+
+                        if ($transaction) {
+                            $guestPayment->update(['transaction_reference' => $transactionId]);
+                            $this->processSuccessfulPayment($guestPayment, $transaction);
+                        }
+                    } elseif ($status === 'failed') {
+                        $guestPayment->update(['status' => 'failed']);
                     }
-                } elseif ($paymentStatus === 'FAILED' || $paymentStatus === 'FAILED') {
-                    $guestPayment->update(['status' => 'failed']);
                 }
             }
         }
@@ -243,244 +251,206 @@ class GuestPaymentController extends Controller
     }
 
     /**
-     * Handle Monnify callback (return URL).
+     * Handle Flutterwave callback (redirect URL).
      */
-    public function handleMonnifyCallback(Request $request, string $slug): RedirectResponse
+    public function handleFlutterwaveCallback(Request $request, string $slug): RedirectResponse
     {
-        $allData = $request->all();
-        $transactionRef = $request->query('transactionReference');
-        $paymentReference = $request->query('paymentReference');
-        
-        // Monnify uses paymentStatus in some versions, status in others
-        $paymentStatus = $request->query('paymentStatus') ?? $request->query('status');
+        $transactionId = $request->query('transaction_id');
+        $txRef         = $request->query('tx_ref');
+        $status        = $request->query('status');
 
-        Log::info('Monnify callback received - RAW DATA', [
-            'slug' => $slug,
-            'all_query_params' => $allData,
-            'transactionRef' => $transactionRef,
-            'paymentStatus' => $paymentStatus,
-            'paymentReference' => $paymentReference,
-            'url' => $request->fullUrl(),
+        Log::info('Flutterwave callback received', [
+            'slug'           => $slug,
+            'transaction_id' => $transactionId,
+            'tx_ref'         => $txRef,
+            'status'         => $status,
+            'url'            => $request->fullUrl(),
         ]);
 
-        // Find guest payment by payment reference (this is what Monnify sends)
         $guestPayment = null;
-        
-        if ($paymentReference) {
-            $guestPayment = GuestPayment::where('payment_reference', $paymentReference)->first();
-            Log::info('Searching by payment_reference', [
-                'found' => $guestPayment ? 'yes' : 'no',
-                'paymentReference' => $paymentReference,
-            ]);
-        }
-        
-        if (!$guestPayment && $transactionRef) {
-            $guestPayment = GuestPayment::where('transaction_reference', $transactionRef)->first();
-            Log::info('Searching by transaction_reference', ['found' => $guestPayment ? 'yes' : 'no']);
+
+        if ($txRef) {
+            $guestPayment = GuestPayment::where('payment_reference', $txRef)->first();
         }
 
-        Log::info('Guest payment found', [
-            'id' => $guestPayment?->id,
-            'status' => $guestPayment?->status,
-            'amount' => $guestPayment?->amount,
-            'payment_reference' => $guestPayment?->payment_reference,
-        ]);
-
-        // If we found a pending guest payment, verify and process it
         if ($guestPayment && $guestPayment->status === 'pending') {
-            Log::info('Found pending guest payment, verifying with Monnify...');
-            
-            // Verify transaction with Monnify using transaction reference
-            $monnifyRef = $transactionRef ?: $guestPayment->transaction_reference;
-            $transaction = $this->verifyMonnifyTransaction($monnifyRef);
+            if ($status === 'cancelled') {
+                return redirect()->route('collections.guest', ['slug' => $slug])
+                    ->with('error', 'Payment was cancelled. Please try again.');
+            }
 
-            if ($transaction) {
-                // Check if transaction status is successful
-                $txStatus = $transaction['status'] ?? $transaction['transactionStatus'] ?? null;
-                
-                Log::info('Transaction verification result', [
-                    'status' => $txStatus,
-                    'full_transaction' => $transaction,
-                ]);
+            if ($transactionId) {
+                $transaction = $this->flutterwave->verifyTransaction($transactionId);
 
-                if ($txStatus === 'SUCCESSFUL' || $txStatus === 'PAID' || $txStatus === 'SUCCESS') {
+                if ($transaction && strtolower($transaction['status'] ?? '') === 'successful') {
+                    $guestPayment->update(['transaction_reference' => $transactionId]);
                     $this->processSuccessfulPayment($guestPayment, $transaction);
+
                     Log::info('Payment processed successfully!');
 
-                    // Redirect to receipt page
                     return redirect()->route('collections.guest.receipt', [
-                        'slug' => $slug,
+                        'slug'       => $slug,
                         'paymentRef' => $guestPayment->payment_reference,
                     ]);
-                } else {
-                    Log::warning('Transaction not successful', ['status' => $txStatus]);
                 }
-            } else {
-                // Verification failed, but payment might still be processing
-                // Give user benefit of doubt if Monnify redirected them back
-                Log::warning('Verification failed, marking as completed since user was redirected back');
-                $this->processSuccessfulPayment($guestPayment, []);
-                Log::info('Payment processed successfully (without verification)!');
-
-                // Redirect to receipt page
-                return redirect()->route('collections.guest.receipt', [
-                    'slug' => $slug,
-                    'paymentRef' => $guestPayment->payment_reference,
-                ]);
             }
-        } else {
-            Log::warning('Guest payment not found or already processed', [
-                'paymentReference' => $paymentReference,
-                'guestPayment' => $guestPayment ? [
-                    'id' => $guestPayment->id,
-                    'status' => $guestPayment->status,
-                ] : null,
+
+            // Verification failed but Flutterwave redirected user back — process as successful
+            Log::warning('Flutterwave verification failed, processing from callback redirect.');
+            $this->processSuccessfulPayment($guestPayment, []);
+
+            return redirect()->route('collections.guest.receipt', [
+                'slug'       => $slug,
+                'paymentRef' => $guestPayment->payment_reference,
             ]);
         }
+
+        Log::warning('Guest payment not found or already processed', ['tx_ref' => $txRef]);
 
         return redirect()->route('collections.guest', ['slug' => $slug])
             ->with('error', 'Payment was not completed. Please try again.');
     }
 
     /**
-     * Initialize payment with Monnify API.
+     * Initialize payment with Flutterwave API.
      */
-    private function initializeMonnifyPayment(array $data): array
+    private function initializeFlutterwavePayment(array $data): string
     {
-        // Get Monnify access token
-        $accessToken = $this->getMonnifyAccessToken();
-
-        // Use the transaction reference passed from the caller
-        $transactionRef = $data['transaction_reference'] ?? ('GATHR_TXN_' . time() . '_' . strtoupper(substr(md5(uniqid()), 0, 8)));
-
         $payload = [
-            'amount' => $data['amount'],
-            'customerName' => $data['customer_name'],
-            'customerEmail' => $data['customer_email'] ?: 'noreply@gathr.com',
-            'paymentReference' => $data['payment_reference'], // Use our payment reference
-            'paymentDescription' => "Payment for {$data['collection_name']}",
-            'currencyCode' => 'NGN',
-            'contractCode' => config('services.monnify.contract_code'),
-            'redirectUrl' => config('app.url') . '/c/' . $data['slug'] . '/pay/callback',
-            'paymentMethods' => $data['payment_method'] === 'card' ? ['CARD'] : ['ACCOUNT_TRANSFER'],
-            'metadata' => [
-                'collection_id' => $data['collection_id'],
+            'tx_ref'          => $data['tx_ref'],
+            'amount'          => $data['amount'],
+            'currency'        => 'NGN',
+            'redirect_url'    => config('app.url') . '/c/' . $data['slug'] . '/pay/callback',
+            'payment_options' => $data['payment_method'] === 'card' ? 'card' : 'banktransfer',
+            'customer'        => [
+                'email' => $data['customer_email'] ?: 'noreply@gathr.com',
+                'name'  => $data['customer_name'] ?: 'Anonymous',
+            ],
+            'customizations' => [
+                'title'       => 'Gathr',
+                'description' => 'Payment for ' . $data['collection_name'],
+            ],
+            'meta' => [
+                'collection_id'    => $data['collection_id'],
                 'guest_payment_id' => $data['guest_payment_id'],
-                'payment_type' => $data['payment_type'],
-                'is_anonymous' => $data['is_anonymous'] ?? false,
+                'payment_type'     => $data['payment_type'],
+                'is_anonymous'     => $data['is_anonymous'],
             ],
         ];
 
-        Log::info('Monnify payment request', [
-            'payload' => $payload,
-            'contract_code' => config('services.monnify.contract_code'),
-            'base_url' => config('services.monnify.base_url'),
+        Log::info('Flutterwave payment request', [
+            'payload'  => $payload,
+            'base_url' => 'https://api.flutterwave.com/v3',
         ]);
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $accessToken,
-            'Content-Type' => 'application/json',
-        ])->post(config('services.monnify.base_url') . '/api/v1/merchant/transactions/init-transaction', $payload);
+        $response = Http::timeout(30)
+            ->withToken(config('services.flutterwave.secret_key'))
+            ->acceptJson()
+            ->post('https://api.flutterwave.com/v3/payments', $payload);
 
-        Log::info('Monnify payment response', [
+        Log::info('Flutterwave payment response', [
             'status' => $response->status(),
-            'body' => $response->json(),
+            'body'   => $response->json(),
         ]);
 
-        if ($response->successful() && $response->json('requestSuccessful')) {
-            return [
-                'checkoutUrl' => $response->json('responseBody.checkoutUrl'),
-                'transactionRef' => $transactionRef,
-            ];
+        if ($response->successful() && $response->json('status') === 'success') {
+            return $response->json('data.link');
         }
 
-        Log::error('Monnify initialization failed', [
-            'status' => $response->status(),
-            'body' => $response->json(),
-        ]);
-
-        throw new \Exception('Monnify payment initialization failed: ' . json_encode($response->json()));
+        throw new \Exception('Flutterwave payment initialization failed: ' . json_encode($response->json()));
     }
 
     /**
-     * Get Monnify access token.
-     */
-    private function getMonnifyAccessToken(): string
-    {
-        $response = Http::withBasicAuth(
-            config('services.monnify.api_key'),
-            config('services.monnify.secret_key')
-        )->post(config('services.monnify.base_url') . '/api/v1/auth/login', []);
-
-        if ($response->successful()) {
-            return $response->json('responseBody.accessToken');
-        }
-
-        throw new \Exception('Failed to get Monnify access token');
-    }
-
-    /**
-     * Verify Monnify transaction.
-     */
-    private function verifyMonnifyTransaction(string $transactionRef): ?array
-    {
-        $accessToken = $this->getMonnifyAccessToken();
-
-        Log::info('Verifying Monnify transaction', ['transactionRef' => $transactionRef]);
-
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $accessToken,
-        ])->get(config('services.monnify.base_url') . "/api/v2/transactions/{$transactionRef}/verify");
-
-        Log::info('Monnify verification response', [
-            'status' => $response->status(),
-            'body' => $response->json(),
-        ]);
-
-        if ($response->successful() && $response->json('requestSuccessful')) {
-            $responseBody = $response->json('responseBody');
-            
-            // Include metadata from the original transaction if available
-            // We need to get metadata from transaction reference or request
-            return $responseBody;
-        }
-
-        return null;
-    }
-
-    /**
-     * Process successful payment.
+     * Process successful payment — update records and create CollectionPayment.
      */
     private function processSuccessfulPayment(GuestPayment $guestPayment, array $transactionData): void
     {
         Log::info('Processing successful payment', [
-            'guestPaymentId' => $guestPayment->id,
+            'guestPaymentId'  => $guestPayment->id,
             'transactionData' => $transactionData,
         ]);
 
-        // Update guest payment status
         $guestPayment->update([
-            'status' => 'completed',
+            'status'       => 'completed',
             'completed_at' => now(),
         ]);
 
-        // Create collection payment record
+        $netAmount = $guestPayment->amount - ($guestPayment->fees ?? 0);
+
         CollectionPayment::create([
             'collection_id' => $guestPayment->collection_id,
-            'user_id' => null, // Guest payment
+            'user_id'       => null,
             'customer_name' => $guestPayment->is_anonymous ? null : $guestPayment->customer_name,
-            'amount' => $guestPayment->amount,
-            'note' => $guestPayment->is_anonymous 
+            'amount'        => $netAmount,
+            'fees'          => $guestPayment->fees ?? 0,
+            'note'          => $guestPayment->is_anonymous
                 ? 'Anonymous payment (Ref: ' . $guestPayment->transaction_reference . ')'
                 : "Payment by {$guestPayment->customer_name} (Ref: {$guestPayment->transaction_reference})",
             'paid_at' => now(),
         ]);
 
         Log::info('Payment processed successfully', [
-            'collection_id' => $guestPayment->collection_id,
-            'amount' => $guestPayment->amount,
-            'customer' => $guestPayment->customer_name,
+            'collection_id'  => $guestPayment->collection_id,
+            'amount'         => $netAmount,
+            'fees'           => $guestPayment->fees ?? 0,
+            'customer'       => $guestPayment->customer_name,
             'transactionRef' => $guestPayment->transaction_reference,
         ]);
+    }
+
+    /**
+     * Process a withdrawal webhook from Flutterwave (transfer.completed event).
+     */
+    private function processWithdrawalWebhook(array $data): void
+    {
+        $eventData = $data['data'] ?? [];
+        $reference = $eventData['reference'] ?? null;
+
+        if (! $reference) {
+            Log::warning('Withdrawal webhook missing reference.', ['payload' => $data]);
+
+            return;
+        }
+
+        $withdrawal = Withdrawal::where('transaction_reference', $reference)->first();
+
+        if (! $withdrawal) {
+            Log::warning('Withdrawal webhook did not match a withdrawal record.', [
+                'reference' => $reference,
+            ]);
+
+            return;
+        }
+
+        $status = strtoupper((string) ($eventData['status'] ?? ''));
+
+        if ($status === 'SUCCESSFUL') {
+            $withdrawal->update([
+                'status'         => 'completed',
+                'processed_at'   => now(),
+                'failure_reason' => null,
+            ]);
+
+            Log::info('Withdrawal marked as completed from Flutterwave webhook.', [
+                'withdrawal_id' => $withdrawal->id,
+                'reference'     => $reference,
+            ]);
+
+            return;
+        }
+
+        if ($status === 'FAILED') {
+            $withdrawal->update([
+                'status'         => 'failed',
+                'failure_reason' => $eventData['complete_message'] ?? 'Flutterwave transfer failed.',
+                'processed_at'   => now(),
+            ]);
+
+            Log::warning('Withdrawal marked as failed from Flutterwave webhook.', [
+                'withdrawal_id' => $withdrawal->id,
+                'reference'     => $reference,
+                'reason'        => $eventData['complete_message'] ?? null,
+            ]);
+        }
     }
 }

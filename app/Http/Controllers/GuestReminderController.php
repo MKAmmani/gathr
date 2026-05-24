@@ -106,6 +106,8 @@ class GuestReminderController extends Controller
             'is_sent' => false,
         ]);
 
+        \Log::info("Reminder created for {$validated['email']} on collection {$collection->name}. Scheduled at: {$reminderTime->toIso8601String()}");
+
         // Format the scheduled time for user display
         $scheduledTimeDisplay = $this->formatScheduledTime($reminderTime, $validated['reminder_type']);
 

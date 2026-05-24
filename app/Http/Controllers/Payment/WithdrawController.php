@@ -4,49 +4,64 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Collection;
+use App\Services\FlutterwaveService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class WithdrawController extends Controller
 {
+    public function __construct(private readonly FlutterwaveService $flutterwave)
+    {
+    }
+
     /**
      * Display the withdrawal page for a collection.
      */
     public function show(Collection $collection): Response
     {
-        $raisedAmount = $collection->payments->sum('amount');
-        
-        // Calculate fees
-        $monnifyFee = $raisedAmount * 0.015; // 1.5%
-        $gathrFee = $raisedAmount * 0.01; // 1%
-        $totalFees = $monnifyFee + $gathrFee;
-        $youReceive = $raisedAmount - $totalFees;
-        
-        // Calculate participant stats
-        $totalParticipants = $collection->participant_goal;
-        $paidParticipants = $collection->participants->where('is_paid', true)->count();
-        $unpaidParticipants = $totalParticipants - $paidParticipants;
+        $raisedAmount    = $collection->total_raised;
+        $availableBalance = $collection->available_balance;
+        $pendingWithdrawals = $collection->withdrawals()
+            ->whereIn('status', ['pending', 'processing', 'pending_authorization'])
+            ->orderByDesc('created_at')
+            ->get();
+        $pendingWithdrawalTotal = (float) $collection->withdrawals()
+            ->whereIn('status', ['pending', 'processing', 'pending_authorization'])
+            ->sum(DB::raw('amount + fees'));
+
+        $withdrawableNow = max(0, $availableBalance - $pendingWithdrawalTotal);
+
+        $isOrganizerPaying = $collection->organizer_pay_charges;
+        $gatewayFee        = $isOrganizerPaying ? round($availableBalance * 0.015, 2) : 0;
+        $gathrFee          = $isOrganizerPaying ? round($availableBalance * 0.005, 2) : 0;
+        $totalFees         = round($gatewayFee + $gathrFee, 2);
+        $youReceive        = round($availableBalance - $totalFees, 2);
+
+        $totalParticipants    = $collection->participant_goal;
+        $paidParticipantsCount = $collection->participants->where('is_paid', true)->count();
+        $guestPaymentCount    = $collection->payments->whereNull('user_id')->count();
+        $totalPaidCount       = $paidParticipantsCount + $guestPaymentCount;
+        $unpaidParticipants   = max(0, $totalParticipants - $totalPaidCount);
         $hasUnpaidParticipants = $unpaidParticipants > 0;
-        
-        // Get owner's bank account info
+
         $owner = $collection->owner;
         $bankInfo = [
-            'bank_name' => $owner->bank_name ?? 'Not set',
-            'account_number' => $owner->bank_account_number ? substr($owner->bank_account_number, 0, 4) . '****' . substr($owner->bank_account_number, -4) : 'Not set',
-            'account_name' => $owner->bank_account_name ?? $owner->name,
-            'has_bank_details' => $owner->bank_name && $owner->bank_account_number && $owner->bank_account_name,
-            'full_account_number' => $owner->bank_account_number ?? '',
+            'bank_name'          => $owner->bank_name ?? 'Not set',
+            'account_number'     => $owner->bank_account_number ? substr($owner->bank_account_number, 0, 4) . '****' . substr($owner->bank_account_number, -4) : 'Not set',
+            'account_name'       => $owner->bank_account_name ?? $owner->name,
+            'has_bank_details'   => $owner->bank_name && $owner->bank_account_number && $owner->bank_account_name,
+            'full_account_number'=> $owner->bank_account_number ?? '',
         ];
-        
-        // Calculate days since collection ended
+
         $daysSinceEnd = 0;
-        $isExpired = false;
+        $isExpired    = false;
         if ($collection->ends_at) {
             $daysSinceEnd = now()->diffInDays($collection->ends_at, false);
-            $isExpired = $collection->ends_at->isPast();
+            $isExpired    = $collection->ends_at->isPast();
         }
 
         return Inertia::render('Payment/Withdraw', [
@@ -55,37 +70,45 @@ class WithdrawController extends Controller
             ],
             'reputation' => $this->getUserReputation(),
             'collection' => [
-                'id' => $collection->id,
-                'name' => $collection->name,
-                'icon' => $collection->icon,
-                'category' => $collection->category,
-                'status' => $collection->status,
-                'ends_at' => $collection->ends_at?->format('d M Y'),
+                'id'                   => $collection->id,
+                'name'                 => $collection->name,
+                'icon'                 => $collection->icon,
+                'category'             => $collection->category,
+                'status'               => $collection->status,
+                'ends_at'              => $collection->ends_at?->format('d M Y'),
+                'organizer_pay_charges'=> $collection->organizer_pay_charges,
             ],
             'balance' => [
-                'total_balance' => $raisedAmount,
-                'total_collected' => $raisedAmount,
-                'monnify_fee' => round($monnifyFee, 2),
-                'monnify_fee_percentage' => 1.5,
-                'gathr_fee' => round($gathrFee, 2),
-                'gathr_fee_percentage' => 1.0,
-                'total_fees' => round($totalFees, 2),
-                'you_receive' => round($youReceive, 2),
+                'total_balance'            => round($availableBalance, 0),
+                'withdrawable_now'         => round($withdrawableNow, 0),
+                'total_collected'          => round($raisedAmount, 0),
+                'pending_withdrawal_total' => round($pendingWithdrawalTotal, 0),
+                'gateway_fee'              => round($gatewayFee, 0),
+                'gateway_fee_percentage'   => 1.5,
+                'gathr_fee'                => round($gathrFee, 0),
+                'gathr_fee_percentage'     => 0.5,
+                'total_fees'               => round($totalFees, 0),
+                'you_receive'              => round($youReceive, 0),
+            ],
+            'withdrawal_state' => [
+                'has_pending'   => $pendingWithdrawals->isNotEmpty(),
+                'pending_count' => $pendingWithdrawals->count(),
+                'pending_total' => round($pendingWithdrawalTotal, 0),
             ],
             'participants' => [
-                'total' => $totalParticipants,
-                'paid' => $paidParticipants,
-                'unpaid' => $unpaidParticipants,
-                'has_unpaid' => $hasUnpaidParticipants,
+                'total'     => $totalParticipants,
+                'paid'      => $totalPaidCount,
+                'unpaid'    => $unpaidParticipants,
+                'has_unpaid'=> $hasUnpaidParticipants,
             ],
-            'bank_info' => $bankInfo,
-            'is_expired' => $isExpired,
-            'days_since_end' => $daysSinceEnd,
+            'bank_info'     => $bankInfo,
+            'is_expired'    => $isExpired,
+            'days_since_end'=> $daysSinceEnd,
             'auth' => [
                 'user' => [
-                    'bank_name' => $owner->bank_name,
+                    'bank_name'           => $owner->bank_name,
                     'bank_account_number' => $owner->bank_account_number,
-                    'bank_account_name' => $owner->bank_account_name,
+                    'bank_account_name'   => $owner->bank_account_name,
                 ],
             ],
         ]);
@@ -100,38 +123,139 @@ class WithdrawController extends Controller
             'amount' => 'required|numeric|min:1',
         ]);
 
-        $raisedAmount = $collection->payments->sum('amount');
-        
-        // Check if collection has sufficient balance
-        if ($raisedAmount <= 0) {
-            return back()->with('error', 'No funds available for withdrawal.');
+        if ($collection->owner_id !== Auth::id()) {
+            return back()->with('error', 'You are not allowed to withdraw from this collection.');
         }
 
-        // Check if owner has bank details
         $owner = $collection->owner;
-        if (!$owner->bank_name || !$owner->bank_account_number || !$owner->bank_account_name) {
+        if (! $owner->bank_name || ! $owner->bank_account_number || ! $owner->bank_account_name) {
             return back()->with('error', 'Please add your bank account details before withdrawing.');
         }
 
-        // Calculate fees
-        $monnifyFee = $raisedAmount * 0.015;
-        $gathrFee = $raisedAmount * 0.01;
-        $youReceive = $raisedAmount - ($monnifyFee + $gathrFee);
+        $bankCode = $this->flutterwave->resolveBankCode($owner->bank_name);
+        if (! $bankCode) {
+            return back()->with('error', 'Unable to resolve the bank code for your payout bank.');
+        }
 
-        // TODO: Integrate with Paystack/Flutterwave for actual payout
-        // For now, we'll just create a withdrawal record
-        
-        // Create withdrawal record
-        $collection->withdrawals()->create([
-            'user_id' => $owner->id,
-            'amount' => $youReceive,
-            'fees' => $monnifyFee + $gathrFee,
-            'status' => 'pending',
-            'processed_at' => null,
-        ]);
+        $withdrawAmount = (int) round((float) $request->amount, 0);
+        $withdrawal     = null;
+        $grossReference = null;
 
-        return redirect()->route('collections.index')
-            ->with('success', 'Withdrawal request submitted successfully. Funds will be transferred within 24 hours.');
+        try {
+            DB::transaction(function () use ($collection, $withdrawAmount, $owner, &$withdrawal, &$grossReference) {
+                $lockedCollection = Collection::query()
+                    ->whereKey($collection->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($lockedCollection->withdrawals()
+                    ->whereIn('status', ['pending', 'processing', 'pending_authorization'])
+                    ->exists()) {
+                    throw new \RuntimeException('A withdrawal request is already pending for this collection.');
+                }
+
+                $availableBalance = $lockedCollection->available_balance;
+
+                if ($availableBalance <= 0 || $withdrawAmount > $availableBalance) {
+                    throw new \RuntimeException('Insufficient funds available for withdrawal.');
+                }
+
+                $owner = $lockedCollection->owner;
+                if (! $owner->bank_name || ! $owner->bank_account_number || ! $owner->bank_account_name) {
+                    throw new \RuntimeException('Please add your bank account details before withdrawing.');
+                }
+
+                $grossReference = 'GATHR_WD_' . $lockedCollection->id . '_' . now()->format('YmdHis') . '_' . strtoupper(substr(md5(uniqid((string) $lockedCollection->id, true)), 0, 8));
+
+                $isOrganizerPaying = $lockedCollection->organizer_pay_charges;
+                $gatewayFee = $isOrganizerPaying ? (int) round($withdrawAmount * 0.015, 0) : 0;
+                $gathrFee   = $isOrganizerPaying ? (int) round($withdrawAmount * 0.005, 0) : 0;
+                $totalFees  = $gatewayFee + $gathrFee;
+                $youReceive = $withdrawAmount - $totalFees;
+
+                $withdrawal = $lockedCollection->withdrawals()->create([
+                    'user_id'               => $owner->id,
+                    'amount'                => $youReceive,
+                    'fees'                  => $totalFees,
+                    'status'                => 'pending',
+                    'transaction_reference' => $grossReference,
+                    'failure_reason'        => null,
+                    'processed_at'          => null,
+                ]);
+            });
+
+            $destinationAccountName = $this->flutterwave->validateDestinationAccount(
+                $bankCode,
+                $owner->bank_account_number
+            );
+
+            $transferResponse = $this->flutterwave->initiateSingleTransfer([
+                'account_bank'    => $bankCode,
+                'account_number'  => $owner->bank_account_number,
+                'amount'          => $withdrawAmount,
+                'narration'       => sprintf('Gathr payout for collection #%d - %s', $collection->id, $collection->name),
+                'currency'        => 'NGN',
+                'reference'       => $grossReference,
+                'debit_currency'  => 'NGN',
+                'beneficiary_name'=> $destinationAccountName,
+            ]);
+
+            $transferStatus = strtoupper((string) ($transferResponse['status'] ?? ''));
+            $flwReference   = $transferResponse['reference'] ?? $grossReference;
+
+            if ($transferStatus === 'SUCCESSFUL') {
+                $withdrawal?->update([
+                    'status'                => 'completed',
+                    'transaction_reference' => $flwReference,
+                    'failure_reason'        => null,
+                    'processed_at'          => now(),
+                ]);
+
+                return redirect()->route('collections.withdraw', $collection)
+                    ->with('success', 'Withdrawal successful! Funds are on their way to your bank account.');
+            }
+
+            if (in_array($transferStatus, ['NEW', 'PENDING'], true)) {
+                $withdrawal?->update([
+                    'status'                => 'processing',
+                    'transaction_reference' => $flwReference,
+                    'failure_reason'        => null,
+                ]);
+
+                return redirect()->route('collections.withdraw', $collection)
+                    ->with('success', 'Withdrawal is being processed and will complete shortly.');
+            }
+
+            $failureReason = $transferResponse['complete_message'] ?? 'Flutterwave disbursement failed.';
+
+            $withdrawal?->update([
+                'status'                => 'failed',
+                'transaction_reference' => $flwReference,
+                'failure_reason'        => $failureReason,
+            ]);
+
+            return back()->with('error', $failureReason);
+
+        } catch (\RuntimeException $e) {
+            if ($withdrawal) {
+                $withdrawal->update([
+                    'status'         => 'failed',
+                    'failure_reason' => $e->getMessage(),
+                ]);
+            }
+
+            return back()->with('error', $e->getMessage());
+
+        } catch (\Throwable $e) {
+            if ($withdrawal) {
+                $withdrawal->update([
+                    'status'         => 'failed',
+                    'failure_reason' => $e->getMessage(),
+                ]);
+            }
+
+            return back()->with('error', 'Withdrawal payout failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -155,38 +279,31 @@ class WithdrawController extends Controller
      */
     public function remainder(Collection $collection): Response
     {
-        // Get all participants and calculate unpaid
-        $allParticipants = $collection->participants;
-        $paidParticipants = $allParticipants->where('is_paid', true);
+        $allParticipants   = $collection->participants;
+        $paidParticipants  = $allParticipants->where('is_paid', true);
         $unpaidParticipants = $allParticipants->filter(function ($p) {
-            return !$p->is_paid || $p->amount_paid === 0 || $p->amount_paid === null;
+            return ! $p->is_paid || $p->amount_paid === 0 || $p->amount_paid === null;
         });
 
-        // Count guest payments as paid contributors
         $guestPaymentCount = $collection->payments->whereNull('user_id')->count();
-        $paidCount = $paidParticipants->count() + $guestPaymentCount;
-        $totalCount = $collection->participant_goal;
-        
-        // Calculate unpaid as: total goal - paid (including guest payments)
-        $unpaidCount = max(0, $totalCount - $paidCount);
+        $paidCount         = $paidParticipants->count() + $guestPaymentCount;
+        $totalCount        = $collection->participant_goal;
+        $unpaidCount       = max(0, $totalCount - $paidCount);
 
-        // Calculate days left (rounded to whole number)
-        $daysLeft = 0;
+        $daysLeft        = 0;
         $endsAtFormatted = '';
         if ($collection->ends_at) {
-            $daysLeft = round(max(0, now()->diffInDays($collection->ends_at, false)));
+            $daysLeft        = round(max(0, now()->diffInDays($collection->ends_at, false)));
             $endsAtFormatted = $collection->ends_at->format('l d M');
         }
 
-        // Generate payment link
         $paymentLink = config('app.url') . '/c/' . strtolower(preg_replace('/[^A-Za-z0-9-]+/', '-', $collection->name)) . '-' . $collection->id;
 
-        // Get unpaid participants list
         $unpaidList = $unpaidParticipants->map(function ($participant) {
             return [
-                'id' => $participant->id,
-                'name' => $participant->user?->name ?? 'Unknown',
-                'amount_due' => $participant->amount_due,
+                'id'          => $participant->id,
+                'name'        => $participant->user?->name ?? 'Unknown',
+                'amount_due'  => $participant->amount_due,
                 'amount_paid' => $participant->amount_paid,
             ];
         });
@@ -197,35 +314,66 @@ class WithdrawController extends Controller
             ],
             'reputation' => $this->getUserReputation(),
             'collection' => [
-                'id' => $collection->id,
-                'name' => $collection->name,
-                'icon' => $collection->icon,
+                'id'                  => $collection->id,
+                'name'                => $collection->name,
+                'icon'                => $collection->icon,
                 'contribution_amount' => $collection->contribution_amount,
-                'participant_goal' => $totalCount,
-                'ends_at' => $endsAtFormatted,
+                'participant_goal'    => $totalCount,
+                'ends_at'             => $endsAtFormatted,
             ],
             'stats' => [
-                'paid_count' => $paidCount,
+                'paid_count'   => $paidCount,
                 'unpaid_count' => $unpaidCount,
-                'total' => $totalCount,
-                'days_left' => $daysLeft,
+                'total'        => $totalCount,
+                'days_left'    => $daysLeft,
             ],
-            'payment_link' => $paymentLink,
+            'payment_link'        => $paymentLink,
             'unpaid_participants' => $unpaidList,
         ]);
     }
 
     /**
-     * Get user reputation based on collections
+     * Send reminder to unpaid participants.
      */
+    public function sendReminder(Request $request, Collection $collection): RedirectResponse
+    {
+        $request->validate([
+            'message'    => 'nullable|string|max:1000',
+            'channels'   => 'required|array',
+            'channels.*' => 'in:whatsapp,sms,email',
+        ]);
+
+        $unpaidParticipants = $collection->participants->filter(function ($p) {
+            return ! $p->is_paid || $p->amount_paid === 0 || $p->amount_paid === null;
+        });
+
+        return back()->with('success', 'Reminder sent to ' . $unpaidParticipants->count() . ' unpaid participants.');
+    }
+
+    /**
+     * Update user bank account details.
+     */
+    public function updateBank(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bank_name'           => 'required|string|max:255',
+            'bank_account_number' => 'required|string|min:10|max:10',
+            'bank_account_name'   => 'required|string|max:255',
+        ]);
+
+        $request->user()->update($validated);
+
+        return back()->with('success', 'Bank account details updated successfully.');
+    }
+
     private function getUserReputation(): array
     {
-        $user = Auth::user();
+        $user               = Auth::user();
         $participationCount = $user->participations()->count() + $user->collections()->count();
 
         $tiers = [
-            ['name' => 'Starter', 'level' => 1, 'min' => 0, 'next_at' => 2],
-            ['name' => 'Rising Rep', 'level' => 2, 'min' => 2, 'next_at' => 4],
+            ['name' => 'Starter',      'level' => 1, 'min' => 0, 'next_at' => 2],
+            ['name' => 'Rising Rep',   'level' => 2, 'min' => 2, 'next_at' => 4],
             ['name' => 'Campus Mogul', 'level' => 3, 'min' => 4, 'next_at' => null],
         ];
 
@@ -237,55 +385,8 @@ class WithdrawController extends Controller
         }
 
         return [
-            'name' => $current['name'],
+            'name'  => $current['name'],
             'level' => $current['level'],
         ];
-    }
-
-    /**
-     * Send reminder to unpaid participants.
-     */
-    public function sendReminder(Request $request, Collection $collection): RedirectResponse
-    {
-        $request->validate([
-            'message' => 'nullable|string|max:1000',
-            'channels' => 'required|array',
-            'channels.*' => 'in:whatsapp,sms,email',
-        ]);
-
-        // Get unpaid participants
-        $unpaidParticipants = $collection->participants->filter(function ($p) {
-            return !$p->is_paid || $p->amount_paid === 0 || $p->amount_paid === null;
-        });
-
-        // TODO: Implement actual notification sending via WhatsApp/SMS/Email
-        // For now, we'll just log the reminder request
-        
-        foreach ($unpaidParticipants as $participant) {
-            // Send notification logic here
-            // - WhatsApp API integration
-            // - SMS API integration
-            // - Email notification
-        }
-
-        return back()->with('success', 'Reminder sent to ' . $unpaidParticipants->count() . ' unpaid participants.');
-    }
-
-    /**
-     * Update user bank account details.
-     */
-    public function updateBank(Request $request): RedirectResponse
-    {
-        $user = $request->user();
-        
-        $validated = $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'bank_account_number' => 'required|string|min:10|max:10',
-            'bank_account_name' => 'required|string|max:255',
-        ]);
-
-        $user->update($validated);
-
-        return back()->with('success', 'Bank account details updated successfully.');
     }
 }

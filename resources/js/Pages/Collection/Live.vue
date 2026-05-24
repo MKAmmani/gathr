@@ -14,7 +14,7 @@ const props = defineProps({
     },
     feePercentage: {
         type: Number,
-        default: 2.5,
+        default: 2.0,
     },
     feeAmount: {
         type: Number,
@@ -177,10 +177,16 @@ const getNumberOfPeople = () => {
             <!-- Fee Reminder -->
             <section class="bg-[#FFF8E1] rounded-2xl p-5 mb-8">
                 <h4 class="text-[#EF6C00] font-bold text-[14px] mb-2">Fee reminder</h4>
-                <p class="text-[#EF6C00] text-[14px] leading-relaxed">
-                    Gathr charges a flat 2.5% fee (1% platform + 1.5% payment processing) on the total amount collected. 
+                <p v-if="props.collection.organizer_pay_charges" class="text-[#EF6C00] text-[14px] leading-relaxed">
+                    Gathr charges a flat 2.0% fee (0.5% platform + 1.5% payment processing) on the total amount collected. 
                     <span class="font-bold">
                         This fee will be automatically deducted when you withdraw your funds.
+                    </span>
+                </p>
+                <p v-else class="text-[#EF6C00] text-[14px] leading-relaxed">
+                    Contributors pay a flat 2.0% fee (0.5% platform + 1.5% payment processing) during payment. 
+                    <span class="font-bold">
+                        You will receive the full amount collected without any deductions when you withdraw.
                     </span>
                 </p>
             </section>
@@ -318,7 +324,7 @@ const getNumberOfPeople = () => {
             <section class="bg-[#FFF8E1] rounded-xl p-5 mb-8">
                 <h4 class="text-[#EF6C00] font-bold text-[14px] mb-2">Fee reminder</h4>
                 <p class="text-[#EF6C00] text-[14px] leading-relaxed">
-                    Gathr charges 1% + Flutterwave {{ (feePercentage - 1).toFixed(1) }}% per transaction. 
+                    Gathr charges 0.5% + Gateway {{ (feePercentage - 0.5).toFixed(1) }}% per transaction. 
                     <span v-if="props.collection.contribution_amount > 0">
                         Contributors pay {{ formatMoney(props.feeAmount) }} for a {{ formatMoney(props.collection.contribution_amount) }} collection
                     </span>

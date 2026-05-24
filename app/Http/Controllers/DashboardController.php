@@ -57,15 +57,9 @@ class DashboardController extends Controller
                     $progress = 0;
                 }
 
-                // Ensure progress is between 0 and 100
-                $progress = max(0, min(100, $progress));
-
-                // Calculate total amount raised including guest payments
-                $participationAmount = (int) ($collection->amount_raised ?? 0);
-                $guestPaymentsAmount = (int) $collection->payments()
-                    ->whereNull('user_id')
-                    ->sum('amount');
-                $totalAmountRaised = $participationAmount + $guestPaymentsAmount;
+                // Calculate total amount raised and available balance using model attributes
+                $totalAmountRaised = $collection->total_raised;
+                $availableBalance = $collection->available_balance;
 
                 // Count guest payments as paid contributors
                 $guestPaymentCount = (int) $collection->payments()
@@ -104,6 +98,7 @@ class DashboardController extends Controller
                     'participants_count' => $totalParticipants,
                     'paid_count' => $totalPaidCount,
                     'amount_raised' => $totalAmountRaised,
+                    'available_balance' => $availableBalance,
                     'days_left' => $daysLeft,
                     'status' => $status,
                     'type' => $collection->type,
@@ -111,14 +106,9 @@ class DashboardController extends Controller
                 ];
             });
 
-        $totalBalance = (int) $user->participations()->sum('amount_paid');
-        
-        // Add guest payments to the total balance
-        $guestPaymentsTotal = CollectionPayment::whereIn('collection_id', $ownedCollectionIds)
-            ->whereNull('user_id')
-            ->sum('amount');
-        
-        $totalBalance += (int) $guestPaymentsTotal;
+        $totalBalance = Collection::where('owner_id', $user->id)
+            ->get()
+            ->sum('available_balance');
         
         $totalPaid = CollectionParticipation::whereIn('collection_id', $collectionIds)
             ->where('is_paid', true)

@@ -10,6 +10,14 @@ const props = defineProps({
         type: Number,
         required: true,
     },
+    base_amount: {
+        type: Number,
+        required: true,
+    },
+    fees: {
+        type: Number,
+        required: true,
+    },
     name: {
         type: String,
         required: true,
@@ -91,6 +99,8 @@ const handlePayment = async () => {
             },
             body: JSON.stringify({
                 amount: props.amount,
+                base_amount: props.base_amount,
+                fees: props.fees,
                 name: props.name,
                 is_anonymous: props.isAnonymous ? 1 : 0,
                 payment_type: props.paymentType,
@@ -166,7 +176,7 @@ const handlePayment = async () => {
                 <span class="material-symbols-outlined text-[#FF9800] text-xl shrink-0" style="font-variation-settings: 'FILL' 1;">shield</span>
                 <div>
                     <p class="text-[12px] font-semibold text-[#E65100] mb-0.5">Secure Payment</p>
-                    <p class="text-[11px] text-[#888888] leading-relaxed">Your payment is secured by Monnify. All transactions are encrypted and protected.</p>
+                    <p class="text-[11px] text-[#888888] leading-relaxed">Your payment is secured by Flutterwave. All transactions are encrypted and protected.</p>
                 </div>
             </section>
 

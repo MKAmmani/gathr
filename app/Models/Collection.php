@@ -39,6 +39,23 @@ class Collection extends Model
         'allow_custom_amount' => 'boolean',
     ];
 
+    public function getTotalRaisedAttribute(): float
+    {
+        return (float) round($this->payments()->sum('amount') ?? 0, 0);
+    }
+
+    public function getAvailableBalanceAttribute(): float
+    {
+        $totalRaised = $this->total_raised;
+        // Only subtract completed withdrawals from the available balance.
+        // Pending/Processing withdrawals are still "in the system" and shown separately in the UI.
+        $totalWithdrawn = (float) round($this->withdrawals()
+            ->where('status', 'completed')
+            ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(amount, 0) + COALESCE(fees, 0)')), 0);
+
+        return (float) max(0, $totalRaised - $totalWithdrawn);
+    }
+
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');

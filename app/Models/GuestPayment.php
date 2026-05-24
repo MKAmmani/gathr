@@ -14,6 +14,7 @@ class GuestPayment extends Model
         'customer_name',
         'customer_email',
         'amount',
+        'fees',
         'is_anonymous',
         'payment_type',
         'status',

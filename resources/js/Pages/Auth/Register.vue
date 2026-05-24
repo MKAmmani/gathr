@@ -1,5 +1,9 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
+
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 const form = useForm({
     email: '',
@@ -90,9 +94,18 @@ const submit = () => {
                             v-model="form.password"
                             class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-xl tracking-widest"
                             placeholder="********"
-                            type="password"
+                            :type="showPassword ? 'text' : 'password'"
                             autocomplete="new-password"
                         />
+                        <button
+                            type="button"
+                            @click="showPassword = !showPassword"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#333333] transition-colors"
+                        >
+                            <span class="material-symbols-outlined text-2xl">
+                                {{ showPassword ? 'visibility_off' : 'visibility' }}
+                            </span>
+                        </button>
                     </div>
                     <p v-if="form.errors.password" class="text-[13px] text-red-600 mt-1 font-normal">
                         {{ form.errors.password }}
@@ -106,9 +119,18 @@ const submit = () => {
                             v-model="form.password_confirmation"
                             class="w-full px-4 py-4 bg-white border border-[#E0E8F0] rounded-xl focus:ring-1 focus:ring-[#00A2E8] focus:border-[#00A2E8] outline-none transition-all text-xl tracking-widest"
                             placeholder="********"
-                            type="password"
+                            :type="showConfirmPassword ? 'text' : 'password'"
                             autocomplete="new-password"
                         />
+                        <button
+                            type="button"
+                            @click="showConfirmPassword = !showConfirmPassword"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-[#757575] hover:text-[#333333] transition-colors"
+                        >
+                            <span class="material-symbols-outlined text-2xl">
+                                {{ showConfirmPassword ? 'visibility_off' : 'visibility' }}
+                            </span>
+                        </button>
                     </div>
                     <p v-if="form.errors.password_confirmation" class="text-[13px] text-red-600 mt-1 font-normal">
                         {{ form.errors.password_confirmation }}

@@ -108,15 +108,15 @@ Route::get('/c/{slug}/pay/method', [GuestPaymentController::class, 'showMethod']
     ->name('collections.guest.pay.method');
 Route::post('/c/{slug}/pay/initiate', [GuestPaymentController::class, 'initiatePayment'])
     ->name('collections.guest.pay.initiate');
-Route::get('/c/{slug}/pay/callback', [GuestPaymentController::class, 'handleMonnifyCallback'])
+Route::get('/c/{slug}/pay/callback', [GuestPaymentController::class, 'handleFlutterwaveCallback'])
     ->name('collections.guest.pay.callback');
 Route::get('/c/{slug}/receipt/{paymentRef}', [GuestPaymentController::class, 'showReceipt'])
     ->name('collections.guest.receipt');
 
-// Monnify webhook (no CSRF protection)
-Route::post('/webhooks/monnify', [GuestPaymentController::class, 'handleMonnifyWebhook'])
+// Flutterwave webhook (no CSRF protection)
+Route::post('/webhooks/flutterwave', [GuestPaymentController::class, 'handleFlutterwaveWebhook'])
     ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
-    ->name('webhooks.monnify');
+    ->name('webhooks.flutterwave');
 
 // Guest reminder routes (no auth required)
 Route::get('/c/{slug}/reminder', [GuestReminderController::class, 'show'])

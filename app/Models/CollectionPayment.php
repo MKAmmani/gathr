@@ -15,6 +15,7 @@ class CollectionPayment extends Model
         'user_id',
         'customer_name',
         'amount',
+        'fees',
         'note',
         'paid_at',
     ];

@@ -40,20 +40,27 @@ const paymentForm = useForm({
 
 const selectedPaymentType = ref('full');
 
-const paymentOptions = [
-    { 
-        label: 'Full Payment', 
-        value: 'full',
-        amount: props.collection.contribution_amount,
-        description: 'Pay everything now',
-    },
-    { 
-        label: 'Half Payment', 
-        value: 'half',
-        amount: props.collection.half_payment_amount,
-        description: 'Pay 50% now, rest later',
-    },
-];
+const paymentOptions = computed(() => {
+    const options = [
+        { 
+            label: 'Full Payment', 
+            value: 'full',
+            amount: props.collection.contribution_amount,
+            description: 'Pay everything now',
+        }
+    ];
+
+    if (props.collection.allow_half_payment) {
+        options.push({ 
+            label: 'Half Payment', 
+            value: 'half',
+            amount: props.collection.half_payment_amount,
+            description: 'Pay 50% now, rest later',
+        });
+    }
+
+    return options;
+});
 
 const selectPaymentType = (value) => {
     selectedPaymentType.value = value;
@@ -62,20 +69,46 @@ const selectPaymentType = (value) => {
 };
 
 const selectedAmount = computed(() => {
-    if (paymentForm.custom_amount) {
+    if (paymentForm.custom_amount !== null && paymentForm.custom_amount !== '') {
         return parseInt(paymentForm.custom_amount);
     }
-    const selected = paymentOptions.find(opt => opt.value === selectedPaymentType.value);
+    const selected = paymentOptions.value.find(opt => opt.value === selectedPaymentType.value);
     return selected ? selected.amount : props.collection.contribution_amount;
 });
 
+const handleCustomAmountFocus = () => {
+    selectedPaymentType.value = null;
+    paymentForm.payment_type = 'custom';
+};
+
+const feePercentage = 2.5; // 1.5% Monnify + 1.0% Gathr
+
+const fees = computed(() => {
+    if (props.collection.organizer_pay_charges) {
+        return 0;
+    }
+    return Math.ceil(selectedAmount.value * (feePercentage / 100));
+});
+
+const totalToPay = computed(() => {
+    return selectedAmount.value + fees.value;
+});
+
 const handleContinuePayment = () => {
+    // Validate custom amount if selected
+    if (paymentForm.payment_type === 'custom' && (!paymentForm.custom_amount || paymentForm.custom_amount <= 0)) {
+        alert('Please enter a valid amount');
+        return;
+    }
+
     // Navigate to payment method selection
     const params = {
-        amount: selectedAmount.value,
+        amount: totalToPay.value,
+        base_amount: selectedAmount.value,
+        fees: fees.value,
         name: paymentForm.is_anonymous ? '' : paymentForm.name,
         is_anonymous: paymentForm.is_anonymous ? 1 : 0,
-        payment_type: paymentForm.custom_amount ? 'custom' : paymentForm.payment_type,
+        payment_type: paymentForm.payment_type,
     };
 
     const queryString = new URLSearchParams(params).toString();
@@ -116,7 +149,7 @@ const toggleAnonymous = () => {
             </section>
 
             <!-- User Identity -->
-            <section class="space-y-4 mb-8">
+            <section v-if="collection.anonymous_payments" class="space-y-4 mb-8">
                 <!-- Anonymous Toggle -->
                 <div class="flex items-center justify-between pt-4">
                     <div class="flex flex-col">
@@ -136,6 +169,19 @@ const toggleAnonymous = () => {
 
                 <!-- Name Input (hidden when anonymous) -->
                 <div v-show="!paymentForm.is_anonymous" class="space-y-2 mt-4">
+                    <label class="block text-[14px] font-semibold text-[#444444]">Your name or Nickname</label>
+                    <input
+                        v-model="paymentForm.name"
+                        type="text"
+                        placeholder="Vinciman"
+                        class="w-full h-[58px] px-5 rounded-[12px] border border-blue-100 bg-white focus:border-primary focus:ring-0 transition-all text-text-main placeholder:text-gray-300 text-[16px]"
+                    />
+                </div>
+            </section>
+
+            <!-- Name Input (shown when anonymous payments are disabled) -->
+            <section v-else class="space-y-4 mb-8">
+                <div class="space-y-2">
                     <label class="block text-[14px] font-semibold text-[#444444]">Your name or Nickname</label>
                     <input
                         v-model="paymentForm.name"
@@ -191,7 +237,7 @@ const toggleAnonymous = () => {
                         type="number"
                         placeholder="0.00"
                         class="w-full h-[58px] pl-9 pr-4 rounded-[12px] border border-blue-100 bg-white focus:border-primary focus:ring-0 transition-all text-[16px] text-text-muted"
-                        @focus="paymentForm.custom_amount = ''"
+                        @focus="handleCustomAmountFocus"
                     />
                 </div>
                 <p class="text-[12px] text-text-muted">Input preferred amount</p>
@@ -201,9 +247,10 @@ const toggleAnonymous = () => {
             <div class="bg-[#EAF6FF] rounded-[12px] p-4 flex items-center justify-between mb-8">
                 <div class="flex flex-col">
                     <span class="text-[12px] font-medium text-[#666666]">Total you pay</span>
-                    <span class="text-[11px] text-[#888888]">{{ formatMoney(selectedAmount) }}</span>
+                    <span v-if="!collection.organizer_pay_charges" class="text-[11px] text-[#888888]">{{ formatMoney(selectedAmount) }} + {{ formatMoney(fees) }} (charges)</span>
+                    <span v-else class="text-[11px] text-[#888888]">{{ formatMoney(selectedAmount) }}</span>
                 </div>
-                <span class="text-[16px] font-bold text-[#009EE3]">{{ formatMoney(selectedAmount) }}</span>
+                <span class="text-[16px] font-bold text-[#009EE3]">{{ formatMoney(totalToPay) }}</span>
             </div>
 
             <!-- Sticky Bottom Button -->

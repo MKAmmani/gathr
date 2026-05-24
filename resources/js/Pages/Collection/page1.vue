@@ -36,11 +36,13 @@ const applyTemplate = (template) => {
     selectedTemplate.value = template.id;
     form.type = template.type;
     selectedType.value = template.type;
+    form.name = template.label;
 };
 
 const selectType = (type) => {
     selectedType.value = type;
     form.type = type;
+    selectedTemplate.value = null;
 };
 
 const submit = () => {
@@ -101,6 +103,7 @@ const toggleSidebar = () => {
                             class="w-full bg-white border border-[#E0E0E0] rounded-xl py-3.5 px-4 text-gray-800 placeholder:text-gray-300 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
                             placeholder="300 End-of-Year Dinner🍽️"
                             type="text"
+                            @input="selectedTemplate = null"
                         />
                     </div>
                     <p class="text-[12px] text-gray-400 font-normal">Be specific - contributor trust clear names</p>

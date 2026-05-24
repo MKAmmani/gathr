@@ -34,13 +34,15 @@ class SendRemindersJob implements ShouldQueue
         foreach ($dueReminders as $reminder) {
             try {
                 // Send the reminder email
+                $slug = \Illuminate\Support\Str::slug($reminder->collection->name) . '-' . $reminder->collection->id;
+                
                 Mail::to($reminder->email)->send(
                     new CollectionReminder(
                         collectionName: $reminder->collection->name,
                         organizerName: $reminder->collection->owner->name ?? 'Unknown',
                         deadline: $reminder->collection->ends_at?->format('l, F j, Y g:i A') ?? 'No deadline set',
                         amount: $reminder->collection->contribution_amount,
-                        slug: $reminder->collection->id,
+                        slug: $slug,
                     )
                 );
 
