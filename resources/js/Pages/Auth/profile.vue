@@ -38,7 +38,7 @@ const goBack = () => {
 
 <template>
     <Head title="Set up profile" />
-    <body class="font-sans text-slate-900 antialiased">
+    <div class="font-sans text-slate-900 antialiased">
         <!-- BEGIN: Main Container -->
         <div class="max-w-[430px] mx-auto min-h-screen flex flex-col relative bg-white" data-purpose="page-wrapper">
             <!-- BEGIN: Header -->
@@ -142,5 +142,5 @@ const goBack = () => {
             <!-- END: Footer Button -->
         </div>
         <!-- END: Main Container -->
-    </body>
+    </div>
 </template>

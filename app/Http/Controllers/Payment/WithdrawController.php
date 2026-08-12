@@ -3,18 +3,24 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
+use App\Mail\WithdrawalNotification;
 use App\Models\Collection;
-use App\Services\FlutterwaveService;
+use App\Models\GuestPayment;
+use App\Models\Withdrawal;
+use App\Services\ZainPayService;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class WithdrawController extends Controller
 {
-    public function __construct(private readonly FlutterwaveService $flutterwave)
+    public function __construct(private readonly ZainPayService $zainpay)
     {
     }
 
@@ -36,10 +42,21 @@ class WithdrawController extends Controller
         $withdrawableNow = max(0, $availableBalance - $pendingWithdrawalTotal);
 
         $isOrganizerPaying = $collection->organizer_pay_charges;
-        $gatewayFee        = $isOrganizerPaying ? round($availableBalance * 0.015, 2) : 0;
-        $gathrFee          = $isOrganizerPaying ? round($availableBalance * 0.005, 2) : 0;
-        $totalFees         = round($gatewayFee + $gathrFee, 2);
-        $youReceive        = round($availableBalance - $totalFees, 2);
+
+        if ($isOrganizerPaying) {
+            // Organizer absorbs: Gathr 1.5% + ZainPay ₦25 flat transfer fee (one combined deduction)
+            $gathrFee    = (int) round($availableBalance * 0.015, 0);
+            $gatewayFee  = 25; // ZainPay flat bank transfer fee
+            $totalFees   = $gathrFee + $gatewayFee;
+            $youReceive  = max(0, round($availableBalance - $totalFees, 2));
+        } else {
+            // Payers already paid upfront (Option A). Organizer receives full balance.
+            // ZainPay's ₦25 transfer fee is covered by the accumulated fee pool in the ISA.
+            $gathrFee   = 0;
+            $gatewayFee = 0;
+            $totalFees  = 0;
+            $youReceive = round($availableBalance, 2);
+        }
 
         $totalParticipants    = $collection->participant_goal;
         $paidParticipantsCount = $collection->participants->where('is_paid', true)->count();
@@ -83,12 +100,11 @@ class WithdrawController extends Controller
                 'withdrawable_now'         => round($withdrawableNow, 0),
                 'total_collected'          => round($raisedAmount, 0),
                 'pending_withdrawal_total' => round($pendingWithdrawalTotal, 0),
-                'gateway_fee'              => round($gatewayFee, 0),
-                'gateway_fee_percentage'   => 1.5,
-                'gathr_fee'                => round($gathrFee, 0),
-                'gathr_fee_percentage'     => 0.5,
+                'gateway_fee'              => round($gatewayFee, 0), // ₦25 flat (organizer mode only)
+                'gathr_fee'                => round($gathrFee, 0),   // 1.5% Gathr margin (organizer mode only)
                 'total_fees'               => round($totalFees, 0),
                 'you_receive'              => round($youReceive, 0),
+                'organizer_pays'           => $isOrganizerPaying,
             ],
             'withdrawal_state' => [
                 'has_pending'   => $pendingWithdrawals->isNotEmpty(),
@@ -119,6 +135,9 @@ class WithdrawController extends Controller
      */
     public function store(Request $request, Collection $collection): RedirectResponse
     {
+        // Allow up to 180s — ZainPay transfer endpoint can be slow under load (60s timeout + buffer).
+        set_time_limit(180);
+
         $request->validate([
             'amount' => 'required|numeric|min:1',
         ]);
@@ -132,9 +151,11 @@ class WithdrawController extends Controller
             return back()->with('error', 'Please add your bank account details before withdrawing.');
         }
 
-        $bankCode = $this->flutterwave->resolveBankCode($owner->bank_name);
+        // Prefer the verified bank_code saved at account-setup time.
+        // Fall back to fuzzy resolution only for accounts saved before this fix.
+        $bankCode = $owner->bank_code ?: $this->zainpay->resolveBankCode($owner->bank_name);
         if (! $bankCode) {
-            return back()->with('error', 'Unable to resolve the bank code for your payout bank.');
+            return back()->with('error', 'Unable to resolve the bank code for your payout bank. Please re-save your bank details.');
         }
 
         $withdrawAmount = (int) round((float) $request->amount, 0);
@@ -168,10 +189,23 @@ class WithdrawController extends Controller
                 $grossReference = 'GATHR_WD_' . $lockedCollection->id . '_' . now()->format('YmdHis') . '_' . strtoupper(substr(md5(uniqid((string) $lockedCollection->id, true)), 0, 8));
 
                 $isOrganizerPaying = $lockedCollection->organizer_pay_charges;
-                $gatewayFee = $isOrganizerPaying ? (int) round($withdrawAmount * 0.015, 0) : 0;
-                $gathrFee   = $isOrganizerPaying ? (int) round($withdrawAmount * 0.005, 0) : 0;
-                $totalFees  = $gatewayFee + $gathrFee;
-                $youReceive = $withdrawAmount - $totalFees;
+
+                if ($isOrganizerPaying) {
+                    $gathrFee   = (int) round($withdrawAmount * 0.015, 0);
+                    $gatewayFee = 25; // ZainPay flat transfer fee
+                    $totalFees  = $gathrFee + $gatewayFee;
+                    $youReceive = $withdrawAmount - $totalFees;
+                } else {
+                    // Payers already paid all fees upfront — organizer gets full balance.
+                    $gathrFee   = 0;
+                    $gatewayFee = 0;
+                    $totalFees  = 0;
+                    $youReceive = $withdrawAmount;
+                }
+
+                if ($youReceive <= 0) {
+                    throw new \RuntimeException('Withdrawal amount is too low after fees.');
+                }
 
                 $withdrawal = $lockedCollection->withdrawals()->create([
                     'user_id'               => $owner->id,
@@ -184,78 +218,188 @@ class WithdrawController extends Controller
                 ]);
             });
 
-            $destinationAccountName = $this->flutterwave->validateDestinationAccount(
+            // ZainPay requires the source virtual account for the transfer
+            $amountKobo    = ($withdrawal?->amount ?? $withdrawAmount) * 100;
+            $sourceAccount = $this->zainpay->findSourceAccount($amountKobo);
+
+            if (! $sourceAccount || empty($sourceAccount['accountNumber'])) {
+                throw new \RuntimeException('No ZainPay virtual account found for withdrawal. Set ZAINPAY_SOURCE_VA_NUMBER in your environment.');
+            }
+
+            $this->zainpay->initiateTransfer(
+                $owner->bank_account_number,
                 $bankCode,
-                $owner->bank_account_number
+                $amountKobo,
+                $sourceAccount['accountNumber'],
+                $sourceAccount['bankCode'],
+                $grossReference,
+                sprintf('Gathr payout for collection #%d - %s', $collection->id, $collection->name)
             );
 
-            $transferResponse = $this->flutterwave->initiateSingleTransfer([
-                'account_bank'    => $bankCode,
-                'account_number'  => $owner->bank_account_number,
-                'amount'          => $withdrawAmount,
-                'narration'       => sprintf('Gathr payout for collection #%d - %s', $collection->id, $collection->name),
-                'currency'        => 'NGN',
-                'reference'       => $grossReference,
-                'debit_currency'  => 'NGN',
-                'beneficiary_name'=> $destinationAccountName,
-            ]);
-
-            $transferStatus = strtoupper((string) ($transferResponse['status'] ?? ''));
-            $flwReference   = $transferResponse['reference'] ?? $grossReference;
-
-            if ($transferStatus === 'SUCCESSFUL') {
-                $withdrawal?->update([
-                    'status'                => 'completed',
-                    'transaction_reference' => $flwReference,
-                    'failure_reason'        => null,
-                    'processed_at'          => now(),
-                ]);
-
-                return redirect()->route('collections.withdraw', $collection)
-                    ->with('success', 'Withdrawal successful! Funds are on their way to your bank account.');
-            }
-
-            if (in_array($transferStatus, ['NEW', 'PENDING'], true)) {
-                $withdrawal?->update([
-                    'status'                => 'processing',
-                    'transaction_reference' => $flwReference,
-                    'failure_reason'        => null,
-                ]);
-
-                return redirect()->route('collections.withdraw', $collection)
-                    ->with('success', 'Withdrawal is being processed and will complete shortly.');
-            }
-
-            $failureReason = $transferResponse['complete_message'] ?? 'Flutterwave disbursement failed.';
-
+            // ZainPay processes transfers asynchronously; webhook confirms completion
             $withdrawal?->update([
-                'status'                => 'failed',
-                'transaction_reference' => $flwReference,
-                'failure_reason'        => $failureReason,
+                'status'         => 'processing',
+                'failure_reason' => null,
             ]);
 
-            return back()->with('error', $failureReason);
+            $this->notifyContributors($collection, $withdrawAmount);
+
+            return redirect()->route('collections.withdraw', $collection)
+                ->with('success', 'Withdrawal submitted. Funds will arrive in your bank account shortly.');
+
+        } catch (ConnectionException $e) {
+            // ZainPay did not respond in time. The transfer may already be in flight.
+            // Leave the withdrawal as 'processing' so the organizer cannot submit again
+            // while we wait for the webhook to confirm or deny the transfer.
+            if ($withdrawal) {
+                $withdrawal->update([
+                    'status'         => 'processing',
+                    'failure_reason' => 'ZainPay did not respond in time — awaiting webhook confirmation.',
+                ]);
+            }
+            Log::warning('Withdrawal transfer timeout', [
+                'collection_id' => $collection->id,
+                'withdrawal_id' => $withdrawal?->id,
+                'error'         => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Your withdrawal was submitted but ZainPay did not respond in time. Funds are likely on their way — status will update automatically once ZainPay confirms.');
 
         } catch (\RuntimeException $e) {
+            // ZainPay returned a definitive rejection code (insufficient funds, invalid account, etc.).
+            // Safe to mark failed — ZainPay did not send any money.
             if ($withdrawal) {
                 $withdrawal->update([
                     'status'         => 'failed',
                     'failure_reason' => $e->getMessage(),
                 ]);
             }
-
             return back()->with('error', $e->getMessage());
 
         } catch (\Throwable $e) {
+            // Unknown error after the transfer call was already dispatched.
+            // Keep as 'processing' — we cannot confirm whether ZainPay acted on the request.
             if ($withdrawal) {
                 $withdrawal->update([
-                    'status'         => 'failed',
-                    'failure_reason' => $e->getMessage(),
+                    'status'         => 'processing',
+                    'failure_reason' => 'Unexpected error after dispatch: ' . substr($e->getMessage(), 0, 200) . ' — awaiting webhook.',
                 ]);
             }
-
-            return back()->with('error', 'Withdrawal payout failed: ' . $e->getMessage());
+            Log::error('Withdrawal unexpected error', [
+                'collection_id' => $collection->id,
+                'withdrawal_id' => $withdrawal?->id,
+                'error'         => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Withdrawal submitted but an unexpected error occurred. Please wait a few minutes — status will update automatically.');
         }
+    }
+
+    /**
+     * JSON endpoint: poll ZainPay for a specific withdrawal's status.
+     * Called by the frontend every few seconds while status is "processing".
+     */
+    public function withdrawalStatus(Collection $collection): \Illuminate\Http\JsonResponse
+    {
+        if ($collection->owner_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $withdrawal = $collection->withdrawals()
+            ->whereIn('status', ['processing', 'pending'])
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (! $withdrawal) {
+            return response()->json(['status' => 'none']);
+        }
+
+        // Already know the final state
+        if (in_array($withdrawal->status, ['completed', 'failed'])) {
+            return response()->json(['status' => $withdrawal->status]);
+        }
+
+        // Ask ZainPay using the outbound transfer verify endpoint — NOT the deposit endpoint.
+        // zainbox/transactions only lists inbound payments; withdrawals are outbound transfers.
+        try {
+            $txnRef = $withdrawal->transaction_reference;
+            $result = $this->zainpay->verifyTransfer($txnRef);
+
+            if ($result) {
+                $txStatus = strtolower($result['status'] ?? $result['txnStatus'] ?? $result['transactionType'] ?? '');
+
+                $successStatuses = ['successful', 'success', 'completed', 'transferred', 'transfer', 'debit'];
+                $failStatuses    = ['failed', 'cancelled', 'reversed', 'rejected', 'error'];
+
+                if (in_array($txStatus, $successStatuses)) {
+                    $withdrawal->update(['status' => 'completed', 'processed_at' => now(), 'failure_reason' => null]);
+                    return response()->json(['status' => 'completed']);
+                }
+
+                if (in_array($txStatus, $failStatuses)) {
+                    $withdrawal->update([
+                        'status'         => 'failed',
+                        'failure_reason' => $result['description'] ?? $result['failureReason'] ?? 'Transfer failed per ZainPay.',
+                        'processed_at'   => now(),
+                    ]);
+                    return response()->json(['status' => 'failed']);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Withdrawal status poll error: ' . $e->getMessage(), ['withdrawal_id' => $withdrawal->id]);
+        }
+
+        return response()->json(['status' => $withdrawal->status]);
+    }
+
+    /**
+     * Poll ZainPay and confirm a processing withdrawal.
+     * Useful when webhooks are unavailable (local dev or delayed).
+     */
+    public function confirmWithdrawal(Collection $collection): RedirectResponse
+    {
+        if ($collection->owner_id !== Auth::id()) {
+            return back()->with('error', 'Unauthorized.');
+        }
+
+        $withdrawal = $collection->withdrawals()
+            ->whereIn('status', ['processing', 'pending'])
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (! $withdrawal) {
+            return back()->with('error', 'No processing withdrawal found.');
+        }
+
+        try {
+            $txnRef = $withdrawal->transaction_reference;
+
+            // Use the outbound transfer verify endpoint — zainbox/transactions only shows inbound deposits.
+            $result = $this->zainpay->verifyTransfer($txnRef);
+
+            Log::info('Withdrawal confirm poll', ['txnRef' => $txnRef, 'result' => $result]);
+
+            if ($result) {
+                $txStatus = strtolower($result['status'] ?? $result['txnStatus'] ?? $result['transactionType'] ?? '');
+
+                $successStatuses = ['successful', 'success', 'completed', 'transferred', 'transfer', 'debit'];
+                $failStatuses    = ['failed', 'cancelled', 'reversed', 'rejected', 'error'];
+
+                if (in_array($txStatus, $successStatuses)) {
+                    $withdrawal->update(['status' => 'completed', 'processed_at' => now(), 'failure_reason' => null]);
+                    return back()->with('success', 'Withdrawal confirmed as completed.');
+                }
+
+                if (in_array($txStatus, $failStatuses)) {
+                    $reason = $result['description'] ?? $result['failureReason'] ?? 'Transfer was rejected by ZainPay.';
+                    $withdrawal->update(['status' => 'failed', 'failure_reason' => $reason, 'processed_at' => now()]);
+                    return back()->with('error', 'Withdrawal failed: ' . $reason);
+                }
+            }
+
+        } catch (\Throwable $e) {
+            Log::error('Withdrawal confirm error: ' . $e->getMessage());
+        }
+
+        return back()->with('error', 'Transfer is still processing. Please wait a moment — ZainPay will confirm automatically via webhook.');
     }
 
     /**
@@ -357,6 +501,7 @@ class WithdrawController extends Controller
     {
         $validated = $request->validate([
             'bank_name'           => 'required|string|max:255',
+            'bank_code'           => 'nullable|string|max:20',
             'bank_account_number' => 'required|string|min:10|max:10',
             'bank_account_name'   => 'required|string|max:255',
         ]);
@@ -364,6 +509,53 @@ class WithdrawController extends Controller
         $request->user()->update($validated);
 
         return back()->with('success', 'Bank account details updated successfully.');
+    }
+
+    private function notifyContributors(Collection $collection, float $withdrawalAmount): void
+    {
+        $organizerName = $collection->owner->name ?? 'The organizer';
+        $totalRaised   = $collection->total_raised;
+        $slug          = strtolower(preg_replace('/[^A-Za-z0-9-]+/', '-', $collection->name)) . '-' . $collection->id;
+
+        // Collect emails from guest payments
+        $guestEmails = GuestPayment::where('collection_id', $collection->id)
+            ->where('status', 'completed')
+            ->whereNotNull('customer_email')
+            ->where('customer_email', '!=', '')
+            ->where('is_anonymous', false)
+            ->get(['customer_name', 'customer_email']);
+
+        // Collect emails from registered participants
+        $participantEmails = $collection->participants()
+            ->with('user:id,name,email')
+            ->where('is_paid', true)
+            ->get()
+            ->filter(fn($p) => $p->user && $p->user->email)
+            ->map(fn($p) => (object)[
+                'customer_name'  => $p->user->name,
+                'customer_email' => $p->user->email,
+            ]);
+
+        $allContributors = $guestEmails->concat($participantEmails)
+            ->unique('customer_email');
+
+        foreach ($allContributors as $contributor) {
+            try {
+                Mail::to($contributor->customer_email)->send(new WithdrawalNotification(
+                    contributorName:  $contributor->customer_name ?? 'Contributor',
+                    collectionName:   $collection->name,
+                    organizerName:    $organizerName,
+                    withdrawalAmount: $withdrawalAmount,
+                    totalRaised:      $totalRaised,
+                    collectionSlug:   $slug,
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to send withdrawal notification email', [
+                    'email' => $contributor->customer_email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     private function getUserReputation(): array

@@ -28,7 +28,7 @@ const submit = () => {
 
 <template>
     <Head title="Login" />
-     <body class="text-on-surface antialiased bg-white">
+     <div class="text-on-surface antialiased bg-white">
         <main class="max-w-md mx-auto px-10 pt-24 pb-12">
             <!-- Logo and Intro -->
             <section class="text-center mb-10">
@@ -106,6 +106,6 @@ const submit = () => {
                 </div>
             </footer>
         </main>
-    </body>
+    </div>
 </template>
 

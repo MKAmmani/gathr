@@ -27,6 +27,7 @@ class User extends Authenticatable
         'department',
         'nickname',
         'bank_name',
+        'bank_code',
         'bank_account_number',
         'bank_account_name',
     ];

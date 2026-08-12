@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -52,10 +53,14 @@ class RegisteredUserController extends Controller
     /**
      * Display the profile setup view.
      */
-    public function showProfile(Request $request): Response
+    public function showProfile(Request $request): Response|RedirectResponse
     {
         $userId = $request->session()->get('pending_otp_user_id');
         $user = User::find($userId);
+
+        if (! $user) {
+            return redirect()->route('register');
+        }
 
         return Inertia::render('Auth/profile', [
             'email' => $user->email,
@@ -89,7 +94,16 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        $expiresAt = $this->sendOtp($user);
+        try {
+            $expiresAt = $this->sendOtp($user);
+        } catch (TransportExceptionInterface $e) {
+            report($e);
+
+            return back()->withErrors([
+                'email' => 'We could not send the verification code right now. Please try again later or check your mail settings.',
+            ]);
+        }
+
         $request->session()->put('otp_expires_at', $expiresAt->toIso8601String());
 
         return redirect()->route('otp');
@@ -100,13 +114,14 @@ class RegisteredUserController extends Controller
         $code = str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
         $expiresAt = now()->addMinutes(10);
 
-        Cache::put(
-            'email-otp:' . $user->id,
-            $code,
-            $expiresAt
-        );
+        Cache::put('email-otp:' . $user->id, $code, $expiresAt);
 
-        Mail::to($user->email)->send(new OtpCodeMail($code, 10));
+        try {
+            Mail::to($user->email)->send(new OtpCodeMail($code, 10));
+        } catch (TransportExceptionInterface $e) {
+            Cache::forget('email-otp:' . $user->id);
+            throw $e;
+        }
 
         return $expiresAt;
     }

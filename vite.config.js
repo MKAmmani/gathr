@@ -19,7 +19,20 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['logo.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+            workbox: {
+                navigateFallback: null,
+                // skipWaiting is already handled by registerType: 'autoUpdate' via
+                // postMessage({ type: 'SKIP_WAITING' }) — setting it here as well
+                // made the SW skip waiting twice (redundant) and could interrupt
+                // in-flight Inertia requests on deployment.
+                clientsClaim: true,
+                // Do NOT cache Inertia XHR responses or full HTML pages.
+                // Doing so causes stale-version reload loops after deployment:
+                // SW serves old HTML → Inertia detects version mismatch → reload
+                // → SW serves old HTML again. Let Vite's precache handle assets only.
+                runtimeCaching: [],
+            },
+            includeAssets: ['logo.png', 'favicon.ico', 'robots.txt'],
             manifest: {
                 name: 'Gathr',
                 short_name: 'Gathr',
@@ -31,19 +44,14 @@ export default defineConfig({
                 background_color: '#ffffff',
                 icons: [
                     {
-                        src: '/logo.svg',
+                        src: '/logo.png',
                         sizes: '192x192',
-                        type: 'image/svg+xml'
+                        type: 'image/png'
                     },
                     {
-                        src: '/logo.svg',
+                        src: '/logo.png',
                         sizes: '512x512',
-                        type: 'image/svg+xml'
-                    },
-                    {
-                        src: '/logo.svg',
-                        sizes: '512x512',
-                        type: 'image/svg+xml',
+                        type: 'image/png',
                         purpose: 'any maskable'
                     }
                 ]

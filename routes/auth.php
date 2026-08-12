@@ -36,15 +36,6 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:3,1')
         ->name('otp.resend');
 
-    // Login OTP routes
-    Route::get('otp/login', [OtpController::class, 'loginShow'])->name('otp.login');
-    Route::post('otp/login/verify', [OtpController::class, 'loginVerify'])
-        ->middleware('throttle:10,1')
-        ->name('otp.login.verify');
-    Route::post('otp/login/resend', [OtpController::class, 'loginResend'])
-        ->middleware('throttle:3,1')
-        ->name('otp.login.resend');
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

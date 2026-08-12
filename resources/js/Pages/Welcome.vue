@@ -1,9 +1,30 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { onMounted } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+
+const scrollToHowItWorks = () => {
+    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+};
+
+// Warm the service worker cache for auth pages while online,
+// so /login and /register work offline after the first visit to this page.
+onMounted(() => {
+    if (!navigator.onLine) return;
+    const version = usePage().version;
+    const headers = {
+        'X-Inertia': 'true',
+        'Accept': 'text/html, application/xhtml+xml',
+        'X-Requested-With': 'XMLHttpRequest',
+    };
+    if (version) headers['X-Inertia-Version'] = version;
+    ['/login', '/register'].forEach(url => {
+        fetch(url, { headers }).catch(() => {});
+    });
+});
 </script>
 
 <template>
-     <body
+     <div
         class="bg-white font-['Plus_Jakarta_Sans, sans-serif'] antialiased text-gray-900 overflow-x-hidden flex flex-col">
         <!-- Header -->
         <header class="flex items-center justify-between px-6 py-4 bg-white sticky top-0 z-50">
@@ -63,12 +84,14 @@ import { Head, Link } from '@inertiajs/vue3';
 
             <!-- Primary Actions -->
             <section class="space-y-4 mb-8">
-                <button
+                <Link
+                    :href="route('register')"
                     class="w-full bg-brand-blue text-white py-4.5 rounded-full font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-blue-100 h-16 transition-all hover:brightness-105">
                     Create a collection <span class="material-symbols-outlined text-[24px]">arrow_forward</span>
-                </button>
+                </Link>
                 <button
-                    class="w-full bg-white border border-gray-100 text-brand-blue py-4.5 rounded-full font-bold text-lg shadow-sm h-16 hover:bg-gray-50 transition-all">
+                    class="w-full bg-white border border-gray-100 text-brand-blue py-4.5 rounded-full font-bold text-lg shadow-sm h-16 hover:bg-gray-50 transition-all"
+                    @click="scrollToHowItWorks">
                     See how it works
                 </button>
             </section>
@@ -76,7 +99,7 @@ import { Head, Link } from '@inertiajs/vue3';
             <!-- Trust Badge -->
             <div class="flex items-center gap-2 mb-12">
                 <span class="material-symbols-outlined text-[18px] text-gray-700">verified_user</span>
-                <span class="text-sm font-semibold text-gray-700">Secured by Paystack</span>
+                <span class="text-sm font-semibold text-gray-700">Secured by ZainPay</span>
                 <div class="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
             </div>
 
@@ -492,7 +515,7 @@ import { Head, Link } from '@inertiajs/vue3';
                     </div>
 
                     <!-- Primary CTA Button -->
-                    <button
+                    <Link :href="route('register')"
                         class="bg-[#0095E5] text-white font-bold py-3.5 px-5 rounded-full flex items-center gap-2 shadow-lg active:opacity-90 transition-opacity hover:bg-[#0080c7]">
                         Try Gathr now
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
@@ -500,7 +523,7 @@ import { Head, Link } from '@inertiajs/vue3';
                             <path d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                 stroke-linecap="round" stroke-linejoin="round"></path>
                         </svg>
-                    </button>
+                    </Link>
                 </div>
             </div>
         </section>
@@ -511,10 +534,10 @@ import { Head, Link } from '@inertiajs/vue3';
             <section class="w-full max-w-md bg-security-navy border-t-2 border-b-2 border-security-gold flex items-center overflow-hidden">
                 <div class="flex items-center justify-between px-6 py-4 animate-marquee">
 
-                    <!-- Left: Protected by Paystack -->
+                    <!-- Left: Protected by ZainPay -->
                     <div class="flex items-center gap-2 flex-shrink-0">
                         <span class="text-white text-sm md:text-base font-medium tracking-tight">
-                            Protected by Paystack
+                            Protected by ZainPay
                         </span>
                     </div>
 
@@ -537,7 +560,7 @@ import { Head, Link } from '@inertiajs/vue3';
                     <!-- Duplicate for seamless loop -->
                     <div class="flex items-center gap-2 flex-shrink-0 ml-8">
                         <span class="text-white text-sm md:text-base font-medium tracking-tight">
-                            Protected by Paystack
+                            Protected by ZainPay
                         </span>
                     </div>
 
@@ -653,7 +676,7 @@ import { Head, Link } from '@inertiajs/vue3';
             </section>
             <!-- END: Feature List Section -->
             <!-- BEGIN: How It Works -->
-            <section class="py-12 text-center">
+            <section id="how-it-works" class="py-12 text-center">
                 <div class="px-6">
                     <div class="inline-block bg-blue-50 text-primary text-[10px] font-bold px-3 py-1 rounded-full mb-4">
                         How it works</div>
@@ -735,10 +758,10 @@ import { Head, Link } from '@inertiajs/vue3';
             <section class="w-full max-w-md bg-security-navy border-t-2 border-b-2 border-security-gold flex items-center overflow-hidden">
                 <div class="flex items-center justify-between py-4 animate-marquee-slow">
 
-                    <!-- Left: Protected by Paystack -->
+                    <!-- Left: Protected by ZainPay -->
                     <div class="flex items-center gap-2 flex-shrink-0">
                         <span class="text-white text-sm md:text-base font-medium tracking-tight">
-                            Protected by Paystack
+                            Protected by ZainPay
                         </span>
                     </div>
 
@@ -761,7 +784,7 @@ import { Head, Link } from '@inertiajs/vue3';
                     <!-- Duplicate for seamless loop -->
                     <div class="flex items-center gap-2 flex-shrink-0 ml-8">
                         <span class="text-white text-sm md:text-base font-medium tracking-tight">
-                            Protected by Paystack
+                            Protected by ZainPay
                         </span>
                     </div>
 
@@ -891,6 +914,66 @@ import { Head, Link } from '@inertiajs/vue3';
                 </div>
             </section>
             <!-- END: Organizer Levels -->
+            <!-- END: Organizer Levels -->
+        <!-- Team -->
+        <section class="bg-white font-sans text-slate-800">
+            <!-- BEGIN: MainContent -->
+            <div class="min-h-screen py-10 px-6 max-w-md mx-auto">
+                <!-- BEGIN: HeaderSection -->
+                <div class="text-center mb-12" data-purpose="page-header">
+                    <h1 class="text-2xl font-bold text-[#1a1a1a]">
+                        Meet our <span class="text-[#0099ff]">Leadership</span> Team
+                    </h1>
+                    <!-- Decorative Blue Underline Accent -->
+                    <div class="flex justify-center mt-2">
+                        <div class="h-1.5 w-16 bg-[#0099ff] rounded-full"></div>
+                    </div>
+                </div>
+                <!-- END: HeaderSection -->
+                <!-- BEGIN: LeadershipCardsContainer -->
+                <section class="space-y-10" data-purpose="team-members-list">
+                    <!-- BEGIN: LeadershipCard1 -->
+                    <article class="bg-white rounded-[2.5rem] p-6 border border-gray-50 card-shadow text-center"
+                        data-purpose="leadership-card">
+                        <!-- Profile Image Container -->
+                        <div class="mb-4 overflow-hidden rounded-3xl aspect-[4/3]">
+                            <img alt="Hammed Saddam Opeyemi" class="w-full h-full object-cover"
+                                src="/images/saddam.jpg" />
+                        </div>
+                        <!-- Member Info -->
+                        <div class="space-y-2">
+                            <h2 class="font-bold text-lg text-gray-700">Hammed Saddam Opeyemi</h2>
+                            <p class="text-sm text-gray-500 leading-relaxed">
+                                Leads Gathr and Masq IT Design Team;<br />
+                                Product Builder &amp; Ai Expert
+                            </p>
+                        </div>
+                    </article>
+                    <!-- END: LeadershipCard1 -->
+                    <!-- BEGIN: LeadershipCard2 -->
+                    <article class="bg-white rounded-[2.5rem] p-6 border border-gray-50 card-shadow text-center"
+                        data-purpose="leadership-card">
+                        <!-- Profile Image Container -->
+                        <div class="mb-4 overflow-hidden rounded-3xl aspect-[4/3]">
+                            <img alt="Munir Ammani Kabir" class="w-full h-full object-cover"
+                                src="/images/munir.jpg" />
+                        </div>
+                        <!-- Member Info -->
+                        <div class="space-y-2">
+                            <h2 class="font-bold text-lg text-gray-700">Munir Kabir Ammani</h2>
+                            <p class="text-sm text-gray-500 leading-relaxed">
+                                Leads Gathr and Masq IT Engineering Team;<br />
+                                Software Engineer, Fullstack software Developer
+                            </p>
+                        </div>
+                    </article>
+                    <!-- END: LeadershipCard2 -->
+                </section>
+                <!-- END: LeadershipCardsContainer -->
+            </div>
+            <!-- END: MainContent -->
+        </section>
+        <!--END: Team -->
             <!-- BEGIN: FAQs -->
             <section class="py-12 bg-gray-50">
                 <div class="px-6">
@@ -986,17 +1069,18 @@ import { Head, Link } from '@inertiajs/vue3';
                         <input
                             class="w-full bg-white/10 border-white/20 rounded-2xl py-4 px-6 text-white placeholder:text-blue-100 focus:ring-white focus:border-white"
                             placeholder="Your phone number" type="tel" />
-                        <button
+                        <Link
+                            :href="route('register')"
                             class="w-full bg-white text-primary py-4 rounded-2xl font-extrabold flex items-center justify-center space-x-2 shadow-xl">
-                            <span>Create your first a collections</span>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                            <span>Create your first collection</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"
                                     stroke-width="2"></path>
                             </svg>
-                        </button>
+                        </Link>
                     </div>
                     <p class="mt-6 text-[10px] text-blue-200 font-medium">
-                        🔒 Secured by Paystack · Free to create <br /> No app download · No account to pay
+                        🔒 Secured by ZainPay · Free to create <br /> No app download · No account to pay
                     </p>
                 </div>
             </section>
@@ -1054,5 +1138,5 @@ import { Head, Link } from '@inertiajs/vue3';
                 </div>
             </footer>
             <!-- END: Footer -->
-    </body>
+    </div>
 </template>

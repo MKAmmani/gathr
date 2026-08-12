@@ -50,6 +50,12 @@ const greeting = computed(() => {
     return 'Evening';
 });
 
+const displayName = computed(() => {
+    if (props.user.nickname) return props.user.nickname;
+    // Fall back to first name only
+    return props.user.name.split(' ')[0];
+});
+
 const formatMoney = (amount) =>
     new Intl.NumberFormat('en-NG', {
         style: 'currency',
@@ -192,41 +198,41 @@ const handleLogout = () => {
             <!-- Navigation Menu -->
             <nav class="flex-1 px-4 space-y-1">
                 <!-- Navigation Item: Home -->
-                <a href="/dashboard"
+                <Link href="/dashboard"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/dashboard') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="home"
                         :style="isActiveRoute('/dashboard') ? 'font-variation-settings: \'FILL\' 1;' : ''">home</span>
                     <span class="text-sm">Home</span>
-                </a>
+                </Link>
                 <!-- Navigation Item: Collections -->
-                <a href="/collections"
+                <Link href="/collections"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/collections') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="folder_special"
                         :style="isActiveRoute('/collections') ? 'font-variation-settings: \'FILL\' 1;' : ''">folder_special</span>
                     <span class="text-sm">Collections</span>
-                </a>
+                </Link>
                 <!-- Navigation Item: Profile -->
-                <a href="/profile"
+                <Link href="/profile"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/profile') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="person"
                         :style="isActiveRoute('/profile') ? 'font-variation-settings: \'FILL\' 1;' : ''">person</span>
                     <span class="text-sm">Profile</span>
-                </a>
+                </Link>
                 <!-- Navigation Item: Settings -->
-                <a href="/settings"
+                <Link href="/settings"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/settings') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="settings"
                         :style="isActiveRoute('/settings') ? 'font-variation-settings: \'FILL\' 1;' : ''">settings</span>
                     <span class="text-sm">Settings</span>
-                </a>
+                </Link>
             </nav>
 
             <!-- Footer Section: Logout -->
@@ -261,7 +267,7 @@ const handleLogout = () => {
         <main class="px-5 space-y-6">
             <!-- Greeting Section -->
             <section>
-                <h1 class="text-[#334155] font-bold text-lg">{{ greeting }}, {{ props.user.name }}</h1>
+                <h1 class="text-[#334155] font-bold text-lg">{{ greeting }}, {{ displayName }}</h1>
                 <p class="text-[#94A3B8] text-sm font-medium">
                     Manage your collections and track payments
                 </p>
@@ -431,7 +437,7 @@ const handleLogout = () => {
                 <!-- Action List -->
                 <section class="space-y-0" data-purpose="action-list">
                     <!-- Item 1: Collect from a group -->
-                    <div class="flex items-center py-6 border-b border-[#E2E8F0] cursor-pointer" data-purpose="action-item">
+                    <Link :href="route('collections.create.page1')" class="flex items-center py-6 border-b border-[#E2E8F0] cursor-pointer" data-purpose="action-item">
                         <!-- Icon Container -->
                         <div class="flex-shrink-0 w-12 h-12 bg-[#d1eefc] rounded-xl flex items-center justify-center mr-4" data-purpose="icon-wrapper">
                             <svg class="w-7 h-7 text-[#00AEEF]" fill="currentColor" viewbox="0 0 24 24">
@@ -447,9 +453,9 @@ const handleLogout = () => {
                         <div class="flex-shrink-0 ml-3">
                             <svg class="w-5 h-5 text-[#00AEEF]" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                         </div>
-                    </div>
+                    </Link>
                     <!-- Item 2: Sell event tickets -->
-                    <div class="flex items-center py-6 border-b border-[#E2E8F0] cursor-pointer" data-purpose="action-item">
+                    <Link :href="route('collections.create.page1')" class="flex items-center py-6 border-b border-[#E2E8F0] cursor-pointer" data-purpose="action-item">
                         <!-- Icon Container -->
                         <div class="flex-shrink-0 w-12 h-12 bg-[#d1eefc] rounded-xl flex items-center justify-center mr-4" data-purpose="icon-wrapper">
                             <svg class="w-7 h-7 text-[#00AEEF]" fill="currentColor" viewbox="0 0 24 24">
@@ -465,9 +471,9 @@ const handleLogout = () => {
                         <div class="flex-shrink-0 ml-3">
                             <svg class="w-5 h-5 text-[#00AEEF]" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                         </div>
-                    </div>
+                    </Link>
                     <!-- Item 3: Set up your business page -->
-                    <div class="flex items-center py-6 cursor-pointer" data-purpose="action-item">
+                    <Link :href="route('collections.create.page1')" class="flex items-center py-6 cursor-pointer" data-purpose="action-item">
                         <!-- Icon Container -->
                         <div class="flex-shrink-0 w-12 h-12 bg-[#d1eefc] rounded-xl flex items-center justify-center mr-4" data-purpose="icon-wrapper">
                             <svg class="w-7 h-7 text-[#00AEEF]" fill="currentColor" viewbox="0 0 24 24">
@@ -483,7 +489,7 @@ const handleLogout = () => {
                         <div class="flex-shrink-0 ml-3">
                             <svg class="w-5 h-5 text-[#00AEEF]" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                         </div>
-                    </div>
+                    </Link>
                 </section>
             </main>
             <!-- Recent Activity (only show when there are collections) -->
@@ -492,19 +498,30 @@ const handleLogout = () => {
                 <div class="space-y-6" v-if="props.recentActivity.length">
                     <div class="flex items-center justify-between" v-for="activity in props.recentActivity" :key="activity.id">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-[#BAE6FD] flex items-center justify-center">
-                                <span class="text-[#0096E3] font-bold text-xs">
-                                    {{ activity.payer_name.split(' ').map((n) => n[0]).slice(0, 2).join('') }}
+                            <!-- Withdrawal: wallet icon; Payment: initials avatar -->
+                            <div
+                                class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                                :class="activity.type === 'withdrawal' ? 'bg-red-50' : 'bg-[#BAE6FD]'"
+                            >
+                                <span v-if="activity.type === 'withdrawal'" class="material-symbols-outlined text-red-400 text-[18px]">account_balance_wallet</span>
+                                <span v-else class="text-[#0096E3] font-bold text-xs">
+                                    {{ activity.actor.split(' ').map((n) => n[0]).slice(0, 2).join('') }}
                                 </span>
                             </div>
                             <div>
                                 <p class="text-[13px] font-medium text-[#334155]">
-                                    {{ activity.payer_name }} paid {{ formatMoney(activity.amount) }}.
+                                    <template v-if="activity.type === 'withdrawal'">{{ activity.note }}</template>
+                                    <template v-else>{{ activity.actor }} paid {{ formatMoney(activity.amount) }}.</template>
                                 </p>
-                                <p class="text-[11px] text-[#94A3B8]">{{ formatRelative(activity.paid_at) }}</p>
+                                <p class="text-[11px] text-[#94A3B8]">{{ formatRelative(activity.date) }}</p>
                             </div>
                         </div>
-                        <span class="text-[#22C55E] font-bold text-sm">+{{ formatMoney(activity.amount) }}</span>
+                        <span
+                            class="font-bold text-sm"
+                            :class="activity.type === 'withdrawal' ? 'text-red-400' : 'text-[#22C55E]'"
+                        >
+                            {{ activity.type === 'withdrawal' ? '-' : '+' }}{{ formatMoney(activity.amount) }}
+                        </span>
                     </div>
                 </div>
                 <div v-else class="text-sm text-[#94A3B8]">No recent activity yet.</div>

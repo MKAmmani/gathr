@@ -39,6 +39,11 @@ class Collection extends Model
         'allow_custom_amount' => 'boolean',
     ];
 
+    public function isExpired(): bool
+    {
+        return $this->ends_at !== null && now()->startOfDay()->gte($this->ends_at);
+    }
+
     public function getTotalRaisedAttribute(): float
     {
         return (float) round($this->payments()->sum('amount') ?? 0, 0);
@@ -47,10 +52,12 @@ class Collection extends Model
     public function getAvailableBalanceAttribute(): float
     {
         $totalRaised = $this->total_raised;
-        // Only subtract completed withdrawals from the available balance.
-        // Pending/Processing withdrawals are still "in the system" and shown separately in the UI.
+        // Subtract every withdrawal that is not in a terminal-failed state.
+        // pending + processing + completed all reduce the spendable balance so the
+        // organizer cannot re-submit while a transfer is still in flight.
+        // Only 'failed' and 'cancelled' withdrawals are excluded (money never left).
         $totalWithdrawn = (float) round($this->withdrawals()
-            ->where('status', 'completed')
+            ->whereNotIn('status', ['failed', 'cancelled'])
             ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(amount, 0) + COALESCE(fees, 0)')), 0);
 
         return (float) max(0, $totalRaised - $totalWithdrawn);

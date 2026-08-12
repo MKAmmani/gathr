@@ -97,23 +97,21 @@ const canResend = computed(() => remainingSeconds.value <= 0);
 
 const submit = () => {
     if (remainingSeconds.value <= 0) return;
-    const routeName = props.source === 'login' ? 'otp.login.verify' : 'otp.verify';
-    verifyForm.post(route(routeName));
+    verifyForm.post(route('otp.verify'));
 };
 
 const resend = () => {
     if (!canResend.value) return;
-    const routeName = props.source === 'login' ? 'otp.login.resend' : 'otp.resend';
-    resendForm.post(route(routeName));
+    resendForm.post(route('otp.resend'));
 };
 </script>
 
 <template>
     <Head title="Verify" />
-    <body class="font-sans text-deep-charcoal">
+    <div class="font-sans text-deep-charcoal">
         <div class="mobile-container px-6 pt-6 pb-20">
             <header class="flex items-center justify-between mb-12 pt-4">
-                <button class="p-2 -ml-2" data-purpose="back-button" type="button" @click="$inertia.visit(props.source === 'login' ? route('login') : route('register'))">
+                <button class="p-2 -ml-2" data-purpose="back-button" type="button" @click="$inertia.visit(route('register'))">
                     <svg class="w-6 h-6 text-deep-charcoal" fill="none" height="24" stroke="currentColor"
                         stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24"
                         xmlns="http://www.w3.org/2000/svg">
@@ -183,5 +181,5 @@ const resend = () => {
                 </section>
             </main>
         </div>
-    </body>
+    </div>
 </template>

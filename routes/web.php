@@ -81,6 +81,10 @@ Route::middleware('auth')->group(function () {
         ->name('collections.withdraw');
     Route::post('/collections/{collection}/withdraw', [WithdrawController::class, 'store'])
         ->name('collections.withdraw.store');
+    Route::post('/collections/{collection}/confirm-withdrawal', [WithdrawController::class, 'confirmWithdrawal'])
+        ->name('collections.confirm-withdrawal');
+    Route::get('/api/collections/{collection}/withdrawal-status', [WithdrawController::class, 'withdrawalStatus'])
+        ->name('collections.withdrawal-status');
     Route::post('/collections/{collection}/extend-deadline', [WithdrawController::class, 'extendDeadline'])
         ->name('collections.extend-deadline');
     Route::get('/collections/{collection}/remainder', [WithdrawController::class, 'remainder'])
@@ -93,7 +97,8 @@ Route::middleware('auth')->group(function () {
 
 // API routes
 Route::middleware('auth')->group(function () {
-    Route::post('/api/verify-account', [AccountVerificationController::class, 'verify']);
+    Route::post('/api/verify-account', [AccountVerificationController::class, 'verify'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
     Route::get('/api/banks', [AccountVerificationController::class, 'getBanks']);
 });
 
@@ -108,15 +113,19 @@ Route::get('/c/{slug}/pay/method', [GuestPaymentController::class, 'showMethod']
     ->name('collections.guest.pay.method');
 Route::post('/c/{slug}/pay/initiate', [GuestPaymentController::class, 'initiatePayment'])
     ->name('collections.guest.pay.initiate');
-Route::get('/c/{slug}/pay/callback', [GuestPaymentController::class, 'handleFlutterwaveCallback'])
+Route::get('/c/{slug}/pay/callback', [GuestPaymentController::class, 'handleZainPayCallback'])
     ->name('collections.guest.pay.callback');
+Route::get('/c/{slug}/pay/callback/embedded', [GuestPaymentController::class, 'handleZainPayCallbackEmbedded'])
+    ->name('collections.guest.pay.callback.embedded');
 Route::get('/c/{slug}/receipt/{paymentRef}', [GuestPaymentController::class, 'showReceipt'])
     ->name('collections.guest.receipt');
+Route::get('/api/payment-status/{paymentRef}', [GuestPaymentController::class, 'checkPaymentStatus'])
+    ->name('api.payment.status');
 
-// Flutterwave webhook (no CSRF protection)
-Route::post('/webhooks/flutterwave', [GuestPaymentController::class, 'handleFlutterwaveWebhook'])
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
-    ->name('webhooks.flutterwave');
+// ZainPay webhook (no CSRF protection)
+Route::post('/webhooks/zainpay', [GuestPaymentController::class, 'handleZainPayWebhook'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->name('webhooks.zainpay');
 
 // Guest reminder routes (no auth required)
 Route::get('/c/{slug}/reminder', [GuestReminderController::class, 'show'])

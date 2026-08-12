@@ -118,6 +118,7 @@ class GuestCollectionController extends Controller
                 'target_amount' => $targetAmount,
                 'participant_goal' => $collection->participant_goal,
                 'ends_at' => $deadlineFormatted,
+                'is_expired' => $collection->isExpired(),
                 'allow_half_payment' => $collection->allow_half_payment,
                 'half_payment_amount' => $halfPaymentAmount,
                 'status' => $collection->status,

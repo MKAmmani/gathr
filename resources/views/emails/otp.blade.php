@@ -7,6 +7,9 @@
 </head>
 <body style="font-family: Arial, sans-serif; color: #1f2937; background: #ffffff;">
     <div style="max-width: 520px; margin: 0 auto; padding: 24px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <img src="{{ url('/logo.png') }}" alt="Gathr" style="height: 40px; width: auto;">
+        </div>
         <h1 style="font-size: 20px; margin-bottom: 8px;">Verify your email</h1>
         <p style="margin: 0 0 16px;">Use this code to finish setting up your account.</p>
         <div style="font-size: 28px; font-weight: 700; letter-spacing: 6px; margin: 16px 0;">

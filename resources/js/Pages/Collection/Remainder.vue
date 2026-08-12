@@ -84,7 +84,6 @@ Any issues, reply here. Thank you!`;
         await navigator.share({
             title: props.collection.name || 'Payment reminder',
             text: message,
-            url: props.payment_link,
         });
         return;
     }
@@ -122,7 +121,7 @@ const getShortPaymentLink = () => {
 
 <template>
     <Head :title="`Remind Unpaid - ${props.collection.name}`" />
-    <body class="font-body text-[#1e293b] min-h-screen flex flex-col">
+    <div class="font-body text-[#1e293b] min-h-screen flex flex-col">
         <!-- App Sidebar -->
         <AppSidebar ref="sidebarRef" :user="props.user" :reputation="props.reputation" />
 
@@ -244,7 +243,7 @@ const getShortPaymentLink = () => {
                 {{ isSending ? 'Sending...' : 'Share link to group' }}
             </button>
         </footer>
-    </body>
+    </div>
 </template>
 
 

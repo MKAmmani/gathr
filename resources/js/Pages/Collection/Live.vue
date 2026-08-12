@@ -52,7 +52,6 @@ const shareLink = async () => {
         await navigator.share({
             title: props.collection.name || 'Gathr Collection',
             text: message,
-            url,
         });
         return;
     }
@@ -95,7 +94,7 @@ const getNumberOfPeople = () => {
 <template>
     <Head title="Preview and Launch" />
 
-    <body class="bg-background font-body text-on-surface min-h-screen pb-24">
+    <div class="bg-background font-body text-on-surface min-h-screen pb-24">
         <!-- App Sidebar -->
         <AppSidebar ref="sidebarRef" :user="props.user" :reputation="props.reputation" />
 
@@ -194,14 +193,6 @@ const getNumberOfPeople = () => {
             <!-- Primary Actions -->
             <div class="space-y-4 mb-10">
                 <button
-                    class="w-full bg-[#039BE5] text-white font-headline font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-blue-100 active:scale-[0.98] transition-transform"
-                    type="button"
-                    @click="goLive"
-                >
-                    Go live Now
-                    <span class="material-symbols-outlined text-[20px]" data-icon="north_east">north_east</span>
-                </button>
-                <button
                     class="w-full bg-white border border-[#E1F5FE] text-[#039BE5] font-headline font-bold py-4 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                     type="button"
                     @click="editDetails"
@@ -245,8 +236,8 @@ const getNumberOfPeople = () => {
                 </div>
             </section>
         </main>
-    </body>
-    <!-- <body class="bg-background font-body text-on-surface min-h-screen pb-24">
+    </div>
+    <!-- <div class="bg-background font-body text-on-surface min-h-screen pb-24">
         TopAppBar Component 
         <header class="w-full sticky top-0 z-50 bg-white flex justify-between items-center px-4 py-4 border-b border-gray-50">
             <button class="text-gray-700 p-2" type="button" @click="editDetails">
@@ -337,14 +328,6 @@ const getNumberOfPeople = () => {
             <!- Primary Actions --
             <div class="space-y-4 mb-10">
                 <button
-                    class="w-full bg-[#039BE5] text-white font-headline font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-blue-100 active:scale-[0.98] transition-transform"
-                    type="button"
-                    @click="goLive"
-                >
-                    Go live Now
-                    <span class="material-symbols-outlined text-[20px]" data-icon="north_east">north_east</span>
-                </button>
-                <button
                     class="w-full bg-white border border-[#E1F5FE] text-[#039BE5] font-headline font-bold py-4 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                     type="button"
                     @click="editDetails"
@@ -386,7 +369,7 @@ const getNumberOfPeople = () => {
                 </div>
             </section>
         </main>
-    </body> -->
+    </div> -->
 </template>
 
 

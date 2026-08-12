@@ -101,6 +101,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
+            <img src="{{ url('/logo.png') }}" alt="Gathr" style="height: 44px; width: auto; margin-bottom: 16px;">
             <div class="icon">🔔</div>
             <h1>Payment Reminder</h1>
             <p>You asked us to remind you about this collection</p>

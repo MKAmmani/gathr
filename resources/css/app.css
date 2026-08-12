@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom shadow to match the soft elevation in the image */
+    .card-shadow {
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 15px -5px rgba(0, 0, 0, 0.05);
+    }
+
 /* Custom accordion animations */
 .accordion-content {
   max-height: 0;

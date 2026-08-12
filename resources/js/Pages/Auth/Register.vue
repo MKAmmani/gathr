@@ -21,7 +21,7 @@ const submit = () => {
 
 <template>
     <Head title="Register" />
-    <body class="text-on-surface antialiased bg-white">
+    <div class="text-on-surface antialiased bg-white">
         <main class="max-w-md mx-auto px-10 pt-24 pb-12">
             <section class="text-center mb-10">
                 <h2 class="headline-font text-[28px] font-semibold text-[#333333] leading-tight tracking-tight">
@@ -163,5 +163,5 @@ const submit = () => {
                 </div>
             </footer>
         </main>
-    </body>
+    </div>
 </template>

@@ -62,7 +62,7 @@ const toggleSidebar = () => {
 
 <template>
     <Head title="New Collection" />
-    <body class="font-body text-on-surface min-h-screen pb-32">
+    <div class="font-body text-on-surface min-h-screen pb-32">
         <!-- App Sidebar -->
         <AppSidebar ref="sidebarRef" :user="props.user" :reputation="props.reputation" />
 
@@ -197,5 +197,5 @@ const toggleSidebar = () => {
                 </button>
             </div>
         </div>
-    </body>
+    </div>
 </template>

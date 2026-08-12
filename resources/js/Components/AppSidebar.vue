@@ -1,5 +1,5 @@
 <script setup>
-import { usePage, router } from '@inertiajs/vue3';
+import { usePage, router, Link } from '@inertiajs/vue3';
 import { computed, ref, provide } from 'vue';
 
 const props = defineProps({
@@ -116,41 +116,41 @@ provide('sidebarState', {
             <!-- Navigation Menu -->
             <nav class="flex-1 px-4 space-y-1">
                 <!-- Navigation Item: Home -->
-                <a href="/dashboard"
+                <Link href="/dashboard"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/dashboard') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="home"
                         :style="isActiveRoute('/dashboard') ? 'font-variation-settings: \'FILL\' 1;' : ''">home</span>
                     <span class="text-sm">Home</span>
-                </a>
+                </Link>
                 <!-- Navigation Item: Collections -->
-                <a href="/collections"
+                <Link href="/collections"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/collections') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="folder_special"
                         :style="isActiveRoute('/collections') ? 'font-variation-settings: \'FILL\' 1;' : ''">folder_special</span>
                     <span class="text-sm">Collections</span>
-                </a>
+                </Link>
                 <!-- Navigation Item: Profile -->
-                <a href="/profile"
+                <Link href="/profile"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/profile') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="person"
                         :style="isActiveRoute('/profile') ? 'font-variation-settings: \'FILL\' 1;' : ''">person</span>
                     <span class="text-sm">Profile</span>
-                </a>
+                </Link>
                 <!-- Navigation Item: Settings -->
-                <a href="/settings"
+                <Link href="/settings"
                     class="flex items-center px-4 py-3 rounded-xl transition-all duration-150"
                     :class="isActiveRoute('/settings') ? 'bg-[#0096E3] text-white font-semibold shadow-md' : 'text-gray-700 hover:bg-blue-50 hover:text-[#0096E3]'"
                 >
                     <span class="material-symbols-outlined mr-4 text-xl" data-icon="settings"
                         :style="isActiveRoute('/settings') ? 'font-variation-settings: \'FILL\' 1;' : ''">settings</span>
                     <span class="text-sm">Settings</span>
-                </a>
+                </Link>
             </nav>
 
             <!-- Footer Section: Logout -->

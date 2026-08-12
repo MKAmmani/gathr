@@ -6,7 +6,8 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="theme-color" content="#0096E3">
 
-        <link rel="apple-touch-icon" href="/logo.svg">
+        <link rel="apple-touch-icon" href="/logo.png">
+        <link rel="icon" type="image/png" href="/logo.png">
         <link rel="manifest" href="/build/manifest.webmanifest">
 
         <title inertia>{{ config('app.name', 'Gathr') }}</title>
@@ -18,7 +19,7 @@
 
         <!-- Scripts -->
         @routes
-        @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
+        @vite(['resources/js/app.js'])
         @inertiaHead
     </head>
     <body class="font-sans antialiased">

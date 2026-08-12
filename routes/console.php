@@ -14,3 +14,10 @@ Schedule::command('reminders:send')
     ->name('Send scheduled reminders')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/reminder-scheduler.log'));
+
+// Poll ZainPay every 5 minutes to auto-resolve any processing/pending withdrawals.
+Schedule::command('withdrawals:sync-statuses')
+    ->everyFiveMinutes()
+    ->name('Sync withdrawal statuses')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/withdrawal-sync.log'));

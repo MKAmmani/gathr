@@ -88,7 +88,7 @@ const progressWidth = computed(() => {
 </script>
 
 <template>
-    <body class="bg-white text-slate-800 min-h-screen flex flex-col items-center justify-start pb-10">
+    <div class="bg-white text-slate-800 min-h-screen flex flex-col items-center justify-start pb-10">
         <!-- Header Component -->
         <header class="flex items-center w-full px-5 h-20 bg-white border-b border-slate-50">
             <div class="flex items-center justify-center w-8 h-8 bg-[#E0F2FE] rounded-md border border-sky-100 cursor-pointer" @click="goBack">
@@ -215,5 +215,5 @@ const progressWidth = computed(() => {
                 </footer>
             </form>
         </main>
-    </body>
+    </div>
 </template>

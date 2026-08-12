@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router, usePage, useForm } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import AppSidebar from '@/Components/AppSidebar.vue';
 
 const props = defineProps({
@@ -87,6 +87,9 @@ const banks = ref([]);
 const isLoadingBanks = ref(false);
 const bankSearch = ref('');
 const showBankDropdown = ref(false);
+const hideBankDropdown = () => window.setTimeout(() => { showBankDropdown.value = false; }, 200);
+const onBankFocus = () => { if (!bankListUnavailable.value) showBankDropdown.value = true; };
+const onBankChange = () => { if (bankListUnavailable.value) bankForm.bank_name = bankSearch.value; };
 
 const filteredBanks = computed(() => {
     if (!bankSearch.value) return banks.value;
@@ -96,12 +99,14 @@ const filteredBanks = computed(() => {
 
 const selectBank = (bank) => {
     bankForm.bank_name = bank.name;
+    bankForm.bank_code = bank.code;
     bankSearch.value = bank.name;
     showBankDropdown.value = false;
 };
 
 const onBankSearchInput = () => {
     bankForm.bank_name = '';
+    bankForm.bank_code = '';
     bankForm.is_verified = false;
     bankForm.bank_account_name = '';
     showBankDropdown.value = true;
@@ -112,13 +117,14 @@ const extendForm = useForm({
 
 const bankForm = useForm({
     bank_name: props.auth?.user?.bank_name || '',
+    bank_code: '',
     bank_account_number: props.auth?.user?.bank_account_number || '',
     bank_account_name: props.auth?.user?.bank_account_name || '',
     is_verified: false,
 });
 
 const withdrawForm = useForm({
-    amount: props.balance.total_balance || 0,
+    amount: props.balance.withdrawable_now || 0,
 });
 
 const show_custom_amount = ref(false);
@@ -126,18 +132,20 @@ const show_custom_amount = ref(false);
 const toggleCustomAmount = () => {
     show_custom_amount.value = !show_custom_amount.value;
     if (!show_custom_amount.value) {
-        withdrawForm.amount = props.balance.total_balance;
+        withdrawForm.amount = props.balance.withdrawable_now;
         updateFees();
     }
 };
 
+const GATHR_FEE_PCT   = 1.5;   // Gathr's margin
+const ZAINPAY_XFER_FEE = 25;   // ZainPay flat bank transfer fee (naira)
+
 const gatewayFee = ref(props.balance.gateway_fee);
-const gathrFee = ref(props.balance.gathr_fee);
-const totalFees = ref(props.balance.total_fees);
+const gathrFee   = ref(props.balance.gathr_fee);
+const totalFees  = ref(props.balance.total_fees);
 const youReceive = ref(props.balance.you_receive);
 
 const updateFees = () => {
-    // Ensure amount is a number and within bounds
     let amount = Math.floor(parseFloat(withdrawForm.amount) || 0);
     if (amount > props.balance.withdrawable_now) {
         amount = Math.floor(props.balance.withdrawable_now);
@@ -145,14 +153,16 @@ const updateFees = () => {
     }
 
     if (props.collection.organizer_pay_charges) {
-        gatewayFee.value = Math.round(amount * (props.balance.gateway_fee_percentage / 100));
-        gathrFee.value = Math.round(amount * (props.balance.gathr_fee_percentage / 100));
+        // Organizer mode: Gathr 1.5% + ZainPay ₦25 flat — one combined deduction
+        gathrFee.value   = Math.round(amount * (GATHR_FEE_PCT / 100));
+        gatewayFee.value = ZAINPAY_XFER_FEE;
     } else {
+        // Payer mode: fees were collected upfront — no deduction at withdrawal
+        gathrFee.value   = 0;
         gatewayFee.value = 0;
-        gathrFee.value = 0;
     }
-    
-    totalFees.value = gatewayFee.value + gathrFee.value;
+
+    totalFees.value  = gathrFee.value + gatewayFee.value;
     youReceive.value = amount - totalFees.value;
 };
 
@@ -172,22 +182,11 @@ const verifyAccount = async () => {
     isVerifying.value = true;
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        const response = await fetch('/api/verify-account', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': csrfToken || '',
-            },
-            body: JSON.stringify({
-                bank_name: bankForm.bank_name,
-                account_number: bankForm.bank_account_number,
-            }),
+        const { data: result } = await window.axios.post('/api/verify-account', {
+            bank_name: bankForm.bank_name,
+            bank_code: bankForm.bank_code,
+            account_number: bankForm.bank_account_number,
         });
-
-        const result = await response.json();
 
         if (result.success) {
             bankForm.bank_account_name = result.account_name;
@@ -197,8 +196,8 @@ const verifyAccount = async () => {
             showToast('error', result.message || 'Failed to verify account. Please check the details and try again.');
         }
     } catch (error) {
-        console.error('Verification error:', error);
-        showToast('error', 'Failed to verify account. Please try again.');
+        const message = error.response?.data?.message;
+        showToast('error', message || 'Failed to verify account. Please try again.');
     } finally {
         isVerifying.value = false;
     }
@@ -218,6 +217,44 @@ const formatMoney = (amount) => {
 const goBack = () => {
     window.history.back();
 };
+
+// ── Withdrawal status polling ──────────────────────────────────────────────
+// When a withdrawal is "processing", poll every 6 s until ZainPay confirms it.
+const processingWithdrawal = ref(props.withdrawal_state.has_pending);
+const recheckingStatus = ref(false);
+
+const recheckStatus = () => {
+    recheckingStatus.value = true;
+    router.post(`/collections/${props.collection.id}/confirm-withdrawal`, {}, {
+        onFinish: () => { recheckingStatus.value = false; },
+    });
+};
+let withdrawalPollTimer = null;
+
+const pollWithdrawalStatus = async () => {
+    if (!processingWithdrawal.value) return;
+    try {
+        const res  = await fetch(`/api/collections/${props.collection.id}/withdrawal-status`);
+        const data = await res.json();
+        if (data.status === 'completed' || data.status === 'failed' || data.status === 'none') {
+            processingWithdrawal.value = false;
+            clearInterval(withdrawalPollTimer);
+            withdrawalPollTimer = null;
+            // Reload the page so balance and state reflect the new status
+            router.reload({ only: ['balance', 'withdrawal_state'] });
+        }
+    } catch (_) { /* silent */ }
+};
+
+onMounted(() => {
+    if (processingWithdrawal.value) {
+        withdrawalPollTimer = setInterval(pollWithdrawalStatus, 6000);
+    }
+});
+
+onUnmounted(() => {
+    if (withdrawalPollTimer) clearInterval(withdrawalPollTimer);
+});
 
 const submitWithdrawal = () => {
     if (!props.bank_info.has_bank_details) {
@@ -266,20 +303,21 @@ const openBankModal = () => {
     }
 };
 
+const bankListUnavailable = ref(false);
+
 const fetchBanks = async () => {
     isLoadingBanks.value = true;
+    bankListUnavailable.value = false;
     try {
-        const response = await fetch('/api/banks', {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        });
-        const result = await response.json();
+        const { data: result } = await window.axios.get('/api/banks');
         if (result.success) {
             banks.value = result.banks;
+        } else {
+            bankListUnavailable.value = true;
         }
     } catch (error) {
         console.error('Failed to fetch banks:', error);
+        bankListUnavailable.value = true;
     } finally {
         isLoadingBanks.value = false;
     }
@@ -334,7 +372,7 @@ const submitExtendDeadline = () => {
 
 <template>
     <Head :title="`Withdraw - ${props.collection.name}`" />
-    <body class="bg-[#F8FBFF] text-on-surface min-h-screen font-manrope">
+    <div class="bg-[#F8FBFF] text-on-surface min-h-screen font-manrope">
 
         <!-- Toast Notification -->
         <transition
@@ -393,10 +431,24 @@ const submitExtendDeadline = () => {
             </section>
             <!-- Pending Withdrawal Notice -->
             <div v-if="props.withdrawal_state.has_pending" class="bg-[#EEF6FF] rounded-xl p-5 border border-[#D9ECFF]">
-                <h4 class="text-[#0077C8] font-manrope font-bold text-sm mb-1">Withdrawal pending</h4>
+                <div class="flex items-center gap-2 mb-1">
+                    <h4 class="text-[#0077C8] font-manrope font-bold text-sm">Withdrawal processing</h4>
+                    <!-- Pulsing dot: visible while actively polling -->
+                    <span v-if="processingWithdrawal" class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0096E3] opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0096E3]"></span>
+                    </span>
+                </div>
                 <p class="text-[#0077C8] text-sm leading-snug font-manrope">
-                    {{ props.withdrawal_state.pending_count }} withdrawal request{{ props.withdrawal_state.pending_count === 1 ? '' : 's' }} is pending for a total of {{ formatMoney(props.withdrawal_state.pending_total) }}.
+                    {{ formatMoney(props.withdrawal_state.pending_total) }} transfer is on its way to your bank.
+                    <span v-if="processingWithdrawal" class="block text-xs mt-1 opacity-75">Checking status automatically…</span>
                 </p>
+                <button
+                    @click="recheckStatus"
+                    :disabled="recheckingStatus"
+                    class="mt-3 w-full h-[38px] bg-white border border-[#D9ECFF] text-[#0077C8] font-manrope font-bold rounded-xl text-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform">
+                    {{ recheckingStatus ? 'Checking with ZainPay…' : 'Recheck transfer status' }}
+                </button>
             </div>
             <!-- Breakdown Card -->
             <section v-if="props.collection.organizer_pay_charges" class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -430,7 +482,7 @@ const submitExtendDeadline = () => {
                             @input="updateFees"
                             type="number"
                             class="bg-transparent border-none outline-none flex-1 font-manrope font-bold text-[#333333] text-base p-0 focus:ring-0"
-                            :max="props.balance.total_balance"
+                            :max="props.balance.withdrawable_now"
                             step="0.01"
                             placeholder="0.00"
                         />
@@ -443,12 +495,12 @@ const submitExtendDeadline = () => {
                         <span class="text-[#333333] font-manrope font-bold text-sm">{{ formatMoney(withdrawForm.amount) }}</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[#666666] font-manrope font-medium text-sm">Gateway fee ({{ props.balance.gateway_fee_percentage }}%)</span>
-                        <span class="text-primary font-manrope font-bold text-sm">-{{ formatMoney(gatewayFee) }}</span>
+                        <span class="text-[#666666] font-manrope font-medium text-sm">Gathr service fee ({{ GATHR_FEE_PCT }}%)</span>
+                        <span class="text-primary font-manrope font-bold text-sm">-{{ formatMoney(gathrFee) }}</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-[#666666] font-manrope font-medium text-sm">Gathr Fee ({{ props.balance.gathr_fee_percentage }}%)</span>
-                        <span class="text-primary font-manrope font-bold text-sm">-{{ formatMoney(gathrFee) }}</span>
+                        <span class="text-[#666666] font-manrope font-medium text-sm">Bank transfer fee (flat)</span>
+                        <span class="text-primary font-manrope font-bold text-sm">-{{ formatMoney(gatewayFee) }}</span>
                     </div>
                     <div class="pt-6 border-t border-gray-100 flex justify-between items-center">
                         <span class="text-[#333333] font-manrope font-bold text-base">You receive</span>
@@ -489,7 +541,7 @@ const submitExtendDeadline = () => {
                             @input="updateFees"
                             type="number"
                             class="bg-transparent border-none outline-none flex-1 font-manrope font-bold text-[#333333] text-base p-0 focus:ring-0"
-                            :max="props.balance.total_balance"
+                            :max="props.balance.withdrawable_now"
                             step="0.01"
                             placeholder="0.00"
                         />
@@ -637,18 +689,27 @@ const submitExtendDeadline = () => {
                 <div class="space-y-4">
                     <div>
                         <label class="block text-[#333333] font-manrope font-medium text-sm mb-2">Select Bank</label>
+
+                        <!-- Manual input fallback when API is down -->
+                        <div v-if="bankListUnavailable" class="mb-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                            Bank list unavailable — type your bank name exactly (e.g. "GTBank", "First Bank").
+                        </div>
+
                         <div class="relative">
                             <input
                                 v-model="bankSearch"
                                 @input="onBankSearchInput"
-                                @focus="showBankDropdown = true"
-                                @blur="() => setTimeout(() => { showBankDropdown = false }, 200)"
+                                @focus="onBankFocus"
+                                @blur="hideBankDropdown"
+                                @change="onBankChange"
                                 type="text"
-                                placeholder="Search for a bank..."
+                                :placeholder="bankListUnavailable ? 'Type your bank name...' : 'Search for a bank...'"
                                 :disabled="isLoadingBanks"
                                 class="w-full h-[48px] px-4 bg-white border border-[#E1F3FF] rounded-xl outline-none focus:ring-2 focus:ring-[#009CE8]/20 font-manrope text-[#333333]"
                             />
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl pointer-events-none">search</span>
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-xl pointer-events-none">
+                                {{ bankListUnavailable ? 'edit' : 'search' }}
+                            </span>
                             <div v-if="isLoadingBanks" class="flex items-center gap-2 mt-2 text-xs text-gray-400">
                                 <span class="animate-spin">⏳</span> Loading banks...
                             </div>
@@ -681,9 +742,13 @@ const submitExtendDeadline = () => {
                             <button
                                 @click="verifyAccount"
                                 :disabled="isVerifying || bankForm.bank_account_number.length !== 10"
-                                class="h-[48px] px-4 bg-[#22c55e] text-white font-manrope font-bold rounded-xl whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="h-[48px] w-[48px] flex-shrink-0 flex items-center justify-center bg-[#22c55e] text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {{ isVerifying ? 'Verifying...' : 'Verify' }}
+                                <svg v-if="isVerifying" class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                                </svg>
+                                <span v-else class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
                             </button>
                         </div>
                     </div>
@@ -705,7 +770,7 @@ const submitExtendDeadline = () => {
                         </div>
                         <p class="text-[11px] text-gray-400 mt-1">
                             <span v-if="!bankForm.is_verified">Click "Verify" to fetch account name</span>
-                            <span v-else>Account verified via Monnify</span>
+                            <span v-else>Account verified</span>
                         </p>
                     </div>
                 </div>
@@ -729,7 +794,7 @@ const submitExtendDeadline = () => {
                 </div>
             </div>
         </div>
-    </body>
+    </div>
 </template>
 
 <style scoped>

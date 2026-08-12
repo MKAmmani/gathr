@@ -14,10 +14,18 @@ class EnsureOtpNotPending
      */
     public function handle(Request $request, Closure $next): Response|RedirectResponse
     {
-        if ($request->session()->has('login_otp_user_id')) {
-            if (! $request->routeIs('otp.login') && ! $request->routeIs('otp.login.*')) {
-                return redirect()->route('otp.login');
-            }
+        // Never intercept guest-facing, webhook, or auth routes.
+        // Intercepting login/logout would trap users who have a stale pending_otp_user_id
+        // in their session (from an abandoned registration) inside an infinite redirect loop:
+        // EnsureOtpNotPending → /otp (guest-only) → guest middleware → /dashboard → repeat.
+        if (
+            $request->routeIs('collections.guest*') ||
+            $request->routeIs('webhooks.*') ||
+            $request->routeIs('api.*') ||
+            $request->routeIs('login') ||
+            $request->routeIs('logout')
+        ) {
+            return $next($request);
         }
 
         if ($request->session()->has('pending_otp_user_id')) {

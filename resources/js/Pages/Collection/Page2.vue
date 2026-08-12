@@ -59,7 +59,7 @@ const toggleSidebar = () => {
 
 <template>
     <Head title="New Collection - Step 2" />
-    <body class="font-body text-on-surface min-h-screen flex flex-col">
+    <div class="font-body text-on-surface min-h-screen flex flex-col">
         <!-- App Sidebar -->
         <AppSidebar ref="sidebarRef" :user="props.user" :reputation="props.reputation" />
 
@@ -232,5 +232,5 @@ const toggleSidebar = () => {
                 </button>
             </div>
         </div>
-    </body>
+    </div>
 </template>

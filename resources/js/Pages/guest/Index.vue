@@ -54,14 +54,15 @@ const progressWidth = computed(() => {
 });
 
 const daysLeftText = computed(() => {
-    if (props.stats.days_left === 0) {
-        return 'Closing today';
-    }
+    if (props.collection.is_expired) return 'Closed';
+    if (props.stats.days_left === 0) return 'Closing today';
     return `${props.stats.days_left} Days Left`;
 });
 
+const isExpired = computed(() => props.collection.is_expired === true);
+
 const handlePayNow = () => {
-    // Navigate to payment page
+    if (isExpired.value) return;
     window.location.href = `/c/${props.collection.slug}/pay`;
 };
 
@@ -72,11 +73,11 @@ const handleRemindLater = () => {
 </script>
 
 <template>
-<body class="bg-[#007AC1] font-body text-white">
+<div class="bg-[#007AC1] font-body text-white">
     <!-- Header Section -->
     <header class="sticky top-0 z-50 w-full bg-[#3589C1]/40 backdrop-blur-sm">
         <div class="h-12 flex items-center justify-center px-4">
-            <p class="text-[13px] text-white/90 font-medium tracking-wide">Payment secured by paystack</p>
+            <p class="text-[13px] text-white/90 font-medium tracking-wide">Payment secured by ZainPay</p>
         </div>
     </header>
 
@@ -198,14 +199,25 @@ const handleRemindLater = () => {
 
         <!-- Sticky Footer Buttons -->
         <div class="fixed bottom-0 left-0 w-full p-6 bg-white/90 backdrop-blur-md flex flex-col gap-3">
-            <button class="w-full bg-[#009EE3] h-14 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-[#009EE3]/20" type="button" @click="handlePayNow">
-                Pay {{ formatMoney(collection.contribution_amount) }} now
-                <span class="material-symbols-outlined !text-xl font-bold" style="font-variation-settings: 'wght' 700;">arrow_forward</span>
-            </button>
-            <button class="w-full bg-white border border-[#009EE3]/20 h-14 rounded-xl text-[#009EE3] font-bold text-base active:scale-[0.98] transition-colors" type="button" @click="handleRemindLater">
-                Remind me later
-            </button>
+            <!-- Expired state -->
+            <template v-if="isExpired">
+                <div class="w-full bg-gray-100 border border-gray-200 h-14 rounded-xl flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-gray-400 !text-xl">lock</span>
+                    <span class="text-gray-400 font-bold text-base">Collection Closed</span>
+                </div>
+                <p class="text-center text-xs text-gray-400">This collection has passed its deadline. Please contact the organizer to extend the deadline to pay.</p>
+            </template>
+            <!-- Active state -->
+            <template v-else>
+                <button class="w-full bg-[#009EE3] h-14 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-[#009EE3]/20" type="button" @click="handlePayNow">
+                    Pay {{ formatMoney(collection.contribution_amount) }} now
+                    <span class="material-symbols-outlined !text-xl font-bold" style="font-variation-settings: 'wght' 700;">arrow_forward</span>
+                </button>
+                <button class="w-full bg-white border border-[#009EE3]/20 h-14 rounded-xl text-[#009EE3] font-bold text-base active:scale-[0.98] transition-colors" type="button" @click="handleRemindLater">
+                    Remind me later
+                </button>
+            </template>
         </div>
     </main>
-</body>
+</div>
 </template>

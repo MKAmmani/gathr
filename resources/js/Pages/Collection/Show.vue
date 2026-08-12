@@ -108,7 +108,7 @@ const calculatedUnpaid = computed(() => {
 
 <template>
     <Head :title="props.collection.name" />
-    <body class="min-h-screen text-on-surface bg-white font-body">
+    <div class="min-h-screen text-on-surface bg-white font-body">
         <!-- App Sidebar -->
         <AppSidebar ref="sidebarRef" :user="props.user" :reputation="props.reputation" />
 
@@ -268,7 +268,7 @@ const calculatedUnpaid = computed(() => {
                 </template>
             </div>
         </main>
-    </body>
+    </div>
 </template>
 
 <style scoped>

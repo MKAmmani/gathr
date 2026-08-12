@@ -11,6 +11,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    fee_config: {
+        type: Object,
+        default: () => ({ payer_fee_pct: 3.0, transfer_fee_per_payer: 3 }),
+    },
     appUrl: {
         type: String,
         required: true,
@@ -33,6 +37,7 @@ const goBack = () => {
 
 const paymentForm = useForm({
     name: '',
+    email: '',
     is_anonymous: false,
     payment_type: 'full', // 'full' or 'half'
     custom_amount: null,
@@ -70,10 +75,11 @@ const selectPaymentType = (value) => {
 
 const selectedAmount = computed(() => {
     if (paymentForm.custom_amount !== null && paymentForm.custom_amount !== '') {
-        return parseInt(paymentForm.custom_amount);
+        const parsed = parseInt(paymentForm.custom_amount);
+        return isNaN(parsed) ? 0 : parsed;
     }
     const selected = paymentOptions.value.find(opt => opt.value === selectedPaymentType.value);
-    return selected ? selected.amount : props.collection.contribution_amount;
+    return selected ? selected.amount : (props.collection.contribution_amount ?? 0);
 });
 
 const handleCustomAmountFocus = () => {
@@ -81,13 +87,12 @@ const handleCustomAmountFocus = () => {
     paymentForm.payment_type = 'custom';
 };
 
-const feePercentage = 2.5; // 1.5% Monnify + 1.0% Gathr
-
 const fees = computed(() => {
-    if (props.collection.organizer_pay_charges) {
-        return 0;
-    }
-    return Math.ceil(selectedAmount.value * (feePercentage / 100));
+    if (props.collection.organizer_pay_charges) return 0;
+    // Option A: ZainPay DVA % + Gathr % + amortised ₦25 withdrawal fee per payer
+    const pctPart      = Math.ceil(selectedAmount.value * (props.fee_config.payer_fee_pct / 100));
+    const transferPart = props.fee_config.transfer_fee_per_payer;
+    return pctPart + transferPart;
 });
 
 const totalToPay = computed(() => {
@@ -95,18 +100,23 @@ const totalToPay = computed(() => {
 });
 
 const handleContinuePayment = () => {
-    // Validate custom amount if selected
     if (paymentForm.payment_type === 'custom' && (!paymentForm.custom_amount || paymentForm.custom_amount <= 0)) {
         alert('Please enter a valid amount');
         return;
     }
 
-    // Navigate to payment method selection
+    emailError.value = '';
+    if (paymentForm.email && !isValidEmail(paymentForm.email)) {
+        emailError.value = 'Please enter a valid email address.';
+        return;
+    }
+
     const params = {
-        amount: totalToPay.value,
-        base_amount: selectedAmount.value,
-        fees: fees.value,
-        name: paymentForm.is_anonymous ? '' : paymentForm.name,
+        amount:       totalToPay.value,
+        base_amount:  selectedAmount.value,
+        fees:         fees.value,
+        name:         paymentForm.is_anonymous ? '' : paymentForm.name,
+        email:        paymentForm.email,
         is_anonymous: paymentForm.is_anonymous ? 1 : 0,
         payment_type: paymentForm.payment_type,
     };
@@ -118,10 +128,13 @@ const handleContinuePayment = () => {
 const toggleAnonymous = () => {
     paymentForm.is_anonymous = !paymentForm.is_anonymous;
 };
+
+const emailError = ref('');
+const isValidEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 </script>
 
 <template>
-    <body class="bg-bg-main font-body text-text-main antialiased">
+    <div class="bg-bg-main font-body text-text-main antialiased">
         <!-- Top Bar -->
         <header class="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-gray-50">
             <div class="flex items-center px-4 h-16 max-w-lg mx-auto">
@@ -142,7 +155,7 @@ const toggleAnonymous = () => {
                     <p class="text-[14px] font-medium opacity-90 mb-2">You are paying for</p>
                     <div class="flex items-start justify-center mb-2">
                         <span class="text-[28px] font-bold mt-2 mr-0.5">₦</span>
-                        <h2 class="text-[48px] font-extrabold leading-tight">{{ selectedAmount.toLocaleString() }}</h2>
+                        <h2 class="text-[48px] font-extrabold leading-tight">{{ formatMoney(selectedAmount) }}</h2>
                     </div>
                     <p class="text-[14px] font-medium opacity-80">{{ collection.name }}</p>
                 </div>
@@ -167,7 +180,7 @@ const toggleAnonymous = () => {
                     </label>
                 </div>
 
-                <!-- Name Input (hidden when anonymous) -->
+                <!-- Name (hidden when anonymous) -->
                 <div v-show="!paymentForm.is_anonymous" class="space-y-2 mt-4">
                     <label class="block text-[14px] font-semibold text-[#444444]">Your name or Nickname</label>
                     <input
@@ -179,7 +192,7 @@ const toggleAnonymous = () => {
                 </div>
             </section>
 
-            <!-- Name Input (shown when anonymous payments are disabled) -->
+            <!-- Name (shown when anonymous payments are disabled) -->
             <section v-else class="space-y-4 mb-8">
                 <div class="space-y-2">
                     <label class="block text-[14px] font-semibold text-[#444444]">Your name or Nickname</label>
@@ -190,6 +203,23 @@ const toggleAnonymous = () => {
                         class="w-full h-[58px] px-5 rounded-[12px] border border-blue-100 bg-white focus:border-primary focus:ring-0 transition-all text-text-main placeholder:text-gray-300 text-[16px]"
                     />
                 </div>
+            </section>
+
+            <!-- Email — always visible, independent of anonymous toggle -->
+            <section class="space-y-2 mb-8">
+                <label class="block text-[14px] font-semibold text-[#444444]">Email address</label>
+                <input
+                    v-model="paymentForm.email"
+                    type="email"
+                    placeholder="ammani@gmail.com"
+                    :class="[
+                        'w-full h-[58px] px-5 rounded-[12px] border bg-white focus:ring-0 transition-all text-text-main placeholder:text-gray-300 text-[16px]',
+                        emailError ? 'border-red-400 focus:border-red-400' : 'border-blue-100 focus:border-primary'
+                    ]"
+                    @input="emailError = ''"
+                />
+                <p v-if="emailError" class="text-[12px] text-red-500 font-medium">{{ emailError }}</p>
+                <p v-else class="text-[11px] text-gray-400">We'll notify you when the organizer withdraws funds.</p>
             </section>
 
             <hr class="border-gray-100 -mx-5 mb-8" />
@@ -268,5 +298,5 @@ const toggleAnonymous = () => {
                 </div>
             </div>
         </main>
-    </body>
+    </div>
 </template>

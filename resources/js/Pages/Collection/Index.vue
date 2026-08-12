@@ -166,7 +166,7 @@ const getSortLabel = (value) => {
 
 <template>
     <Head title="Collections" />
-    <body class="bg-white text-on-surface min-h-screen pb-10 font-body">
+    <div class="bg-white text-on-surface min-h-screen pb-10 font-body">
         <!-- App Sidebar -->
         <AppSidebar ref="sidebarRef" :user="props.user" :reputation="props.reputation" />
 
@@ -474,7 +474,7 @@ const getSortLabel = (value) => {
                 </div>
             </div>
         </div>
-    </body>
+    </div>
 </template>
 
 <style scoped>

@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php *)"
+      "Bash(php *)",
+      "Bash(get-content *)",
+      "Bash(dir *)",
+      "Bash(taskkill *)",
+      "Bash(copy *)"
     ]
-  }
+  },
+  "$version": 3
 }

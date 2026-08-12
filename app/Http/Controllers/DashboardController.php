@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Collection;
 use App\Models\CollectionParticipation;
 use App\Models\CollectionPayment;
+use App\Models\Withdrawal;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,7 +49,6 @@ class DashboardController extends Controller
                 $paidCount = (int) ($collection->paid_count ?? 0);
                 $totalParticipants = (int) ($collection->participants_count ?? 0);
 
-                // Calculate progress based on participant_goal if set, otherwise based on actual participants
                 if ($goal > 0) {
                     $progress = (int) round(($paidCount / $goal) * 100);
                 } elseif ($totalParticipants > 0) {
@@ -57,24 +57,18 @@ class DashboardController extends Controller
                     $progress = 0;
                 }
 
-                // Calculate total amount raised and available balance using model attributes
                 $totalAmountRaised = $collection->total_raised;
-                $availableBalance = $collection->available_balance;
+                // available_balance already excludes all non-failed/cancelled withdrawals
+                $availableBalance  = $collection->available_balance;
 
-                // Count guest payments as paid contributors
                 $guestPaymentCount = (int) $collection->payments()
                     ->whereNull('user_id')
                     ->count();
                 $totalPaidCount = $paidCount + $guestPaymentCount;
 
-                // Determine collection status based on deadline and payment completion
                 $isExpired = $collection->ends_at && $collection->ends_at->isPast();
                 $allParticipantsPaid = $totalParticipants > 0 && $totalPaidCount >= $totalParticipants;
-                
-                // Status logic:
-                // 1. If deadline passed and not all paid -> expired
-                // 2. If all participants paid -> completed
-                // 3. Otherwise -> active
+
                 if ($isExpired && !$allParticipantsPaid) {
                     $status = 'expired';
                 } elseif ($allParticipantsPaid) {
@@ -83,32 +77,31 @@ class DashboardController extends Controller
                     $status = 'active';
                 }
 
-                // Calculate days left
                 $daysLeft = $collection->ends_at ? now()->diffInDays($collection->ends_at, false) : null;
                 $daysLeft = max(0, $daysLeft ?? 0);
 
                 return [
-                    'id' => $collection->id,
-                    'name' => $collection->name,
-                    'category' => $collection->category,
-                    'icon' => $collection->icon,
-                    'created_at' => optional($collection->created_at)->toDateString(),
+                    'id'                  => $collection->id,
+                    'name'                => $collection->name,
+                    'category'            => $collection->category,
+                    'icon'                => $collection->icon,
+                    'created_at'          => optional($collection->created_at)->toDateString(),
                     'contribution_amount' => $collection->contribution_amount,
-                    'participant_goal' => $collection->participant_goal,
-                    'participants_count' => $totalParticipants,
-                    'paid_count' => $totalPaidCount,
-                    'amount_raised' => $totalAmountRaised,
-                    'available_balance' => $availableBalance,
-                    'days_left' => $daysLeft,
-                    'status' => $status,
-                    'type' => $collection->type,
-                    'progress_percent' => $progress,
+                    'participant_goal'    => $collection->participant_goal,
+                    'participants_count'  => $totalParticipants,
+                    'paid_count'          => $totalPaidCount,
+                    'amount_raised'       => $totalAmountRaised,
+                    'available_balance'   => $availableBalance,
+                    'days_left'           => $daysLeft,
+                    'status'              => $status,
+                    'type'                => $collection->type,
+                    'progress_percent'    => $progress,
                 ];
             });
 
         $totalBalance = Collection::where('owner_id', $user->id)
             ->get()
-            ->sum('available_balance');
+            ->sum(fn (Collection $c) => $c->available_balance);
         
         $totalPaid = CollectionParticipation::whereIn('collection_id', $collectionIds)
             ->where('is_paid', true)
@@ -117,36 +110,62 @@ class DashboardController extends Controller
             ->where('is_paid', false)
             ->count();
 
-        // Recent activity from owned collections and participated collections
-        // Include both regular payments and guest payments
-        $recentActivity = CollectionPayment::query()
+        // Recent payments (guest + member)
+        $payments = CollectionPayment::query()
             ->whereIn('collection_id', $collectionIds)
             ->with('user:id,name')
             ->orderByDesc('paid_at')
-            ->take(3)
+            ->take(10)
             ->get()
             ->map(function (CollectionPayment $payment) {
-                // For guest payments (user_id is null), use customer_name if available
-                $isGuestPayment = $payment->user_id === null;
-                $payerName = $isGuestPayment 
-                    ? ($payment->customer_name ?? 'Anonymous')
-                    : ($payment->user?->name ?? 'Anonymous');
-                
+                $isGuest = $payment->user_id === null;
                 return [
-                    'id' => $payment->id,
-                    'payer_name' => $payerName,
-                    'amount' => (int) $payment->amount,
-                    'note' => $payment->note,
-                    'paid_at' => optional($payment->paid_at)->toDateTimeString(),
-                    'is_guest' => $payment->user_id === null,
+                    'id'         => 'pay_' . $payment->id,
+                    'type'       => 'payment',
+                    'actor'      => $isGuest ? ($payment->customer_name ?? 'Anonymous') : ($payment->user?->name ?? 'Anonymous'),
+                    'amount'     => (int) $payment->amount,
+                    'note'       => $payment->note,
+                    'date'       => optional($payment->paid_at)->toDateTimeString(),
+                    'is_guest'   => $isGuest,
                 ];
             });
+
+        // Recent withdrawals from owned collections (all non-failed, so processing ones show up)
+        $withdrawals = Withdrawal::query()
+            ->whereIn('collection_id', $ownedCollectionIds)
+            ->whereNotIn('status', ['failed'])
+            ->with('collection:id,name')
+            ->orderByDesc('updated_at')
+            ->take(10)
+            ->get()
+            ->map(function (Withdrawal $w) {
+                $statusSuffix = match ($w->status) {
+                    'completed'  => '',
+                    'processing' => ' · Processing',
+                    default      => ' · Pending',
+                };
+                return [
+                    'id'       => 'wdw_' . $w->id,
+                    'type'     => 'withdrawal',
+                    'actor'    => 'You',
+                    'amount'   => (int) $w->amount,
+                    'note'     => 'Withdrawal — ' . ($w->collection->name ?? 'collection') . $statusSuffix,
+                    'date'     => optional($w->updated_at)->toDateTimeString(),
+                    'is_guest' => false,
+                ];
+            });
+
+        $recentActivity = $payments->concat($withdrawals)
+            ->sortByDesc('date')
+            ->take(8)
+            ->values();
 
         $reputation = $this->reputationFromParticipations($participationCount);
 
         return Inertia::render('Dashboard', [
             'user' => [
-                'name' => $user->name,
+                'name'     => $user->name,
+                'nickname' => $user->nickname,
             ],
             'stats' => [
                 'totalBalance' => $totalBalance,
