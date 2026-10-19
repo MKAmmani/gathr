@@ -43,6 +43,12 @@ const submit = () => {
                 <p class="font-body text-[#757575] text-[15px] font-normal tracking-tight">Group payment never been
                     easier</p>
             </section>
+            <div
+                v-if="status"
+                class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-[14px] font-medium text-center"
+            >
+                {{ status }}
+            </div>
             <!-- Registration Form -->
             <form @submit.prevent="submit" class="space-y-6">
                 <!-- Email Field -->
@@ -89,6 +95,14 @@ const submit = () => {
                     Continue
                     <span class="material-symbols-outlined text-2xl" data-icon="arrow_forward">arrow_forward</span>
                 </button>
+                <div v-if="canResetPassword" class="text-center">
+                    <Link
+                        :href="route('password.request')"
+                        class="text-[#00A2E8] font-medium text-[14px] tracking-tight"
+                    >
+                        Forgot password?
+                    </Link>
+                </div>
             </form>
             <!-- Footer Links -->
             <footer class="mt-12 text-center space-y-12">
@@ -103,6 +117,10 @@ const submit = () => {
                         <a class="text-[#00A2E8] font-semibold text-[15px]" href="#">Terms of Service</a>
                         <a class="text-[#00A2E8] font-semibold text-[15px]" href="#">Privacy Policy</a>
                     </div>
+                    <p class="text-[13px] text-[#757575] font-medium tracking-tight">
+                        Contact our support:
+                        <a class="text-[#00A2E8]" href="mailto:masqitsolutions@gmail.com">masqitsolutions@gmail.com</a>
+                    </p>
                 </div>
             </footer>
         </main>

@@ -14,9 +14,17 @@ const props = defineProps({
     source: {
         type: String,
         default: 'register',
-        validator: (value) => ['register', 'login'].includes(value),
+        validator: (value) => ['register', 'login', 'reset-password'].includes(value),
     },
 });
+
+const routesBySource = {
+    register: { verify: 'otp.verify', resend: 'otp.resend', back: 'register' },
+    login: { verify: 'otp.verify', resend: 'otp.resend', back: 'login' },
+    'reset-password': { verify: 'password.otp.verify', resend: 'password.otp.resend', back: 'password.request' },
+};
+
+const sourceRoutes = computed(() => routesBySource[props.source] ?? routesBySource.register);
 
 const verifyForm = useForm({
     code: '',
@@ -97,12 +105,12 @@ const canResend = computed(() => remainingSeconds.value <= 0);
 
 const submit = () => {
     if (remainingSeconds.value <= 0) return;
-    verifyForm.post(route('otp.verify'));
+    verifyForm.post(route(sourceRoutes.value.verify));
 };
 
 const resend = () => {
     if (!canResend.value) return;
-    resendForm.post(route('otp.resend'));
+    resendForm.post(route(sourceRoutes.value.resend));
 };
 </script>
 
@@ -111,7 +119,7 @@ const resend = () => {
     <div class="font-sans text-deep-charcoal">
         <div class="mobile-container px-6 pt-6 pb-20">
             <header class="flex items-center justify-between mb-12 pt-4">
-                <button class="p-2 -ml-2" data-purpose="back-button" type="button" @click="$inertia.visit(route('register'))">
+                <button class="p-2 -ml-2" data-purpose="back-button" type="button" @click="$inertia.visit(route(sourceRoutes.back))">
                     <svg class="w-6 h-6 text-deep-charcoal" fill="none" height="24" stroke="currentColor"
                         stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="24"
                         xmlns="http://www.w3.org/2000/svg">

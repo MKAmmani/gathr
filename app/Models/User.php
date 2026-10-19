@@ -30,6 +30,7 @@ class User extends Authenticatable
         'bank_code',
         'bank_account_number',
         'bank_account_name',
+        'is_admin',
     ];
 
     /**
@@ -52,7 +53,18 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin;
+    }
+
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class, 'admin_id');
     }
 
     public function collections(): HasMany

@@ -159,4 +159,12 @@ Route::get('/reminders', function () {
     ], 200, [], JSON_PRETTY_PRINT);
 })->name('reminders.index');
 
+// Admin Panel routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', \App\Http\Controllers\Admin\AdminDashboardController::class)->name('dashboard');
+    Route::get('/dashboard', \App\Http\Controllers\Admin\AdminDashboardController::class);
+    Route::get('/announcements', [\App\Http\Controllers\Admin\AdminAnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/announcements', [\App\Http\Controllers\Admin\AdminAnnouncementController::class, 'store'])->name('announcements.store');
+});
+
 require __DIR__.'/auth.php';

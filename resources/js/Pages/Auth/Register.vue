@@ -160,6 +160,10 @@ const submit = () => {
                         <a class="text-[#00A2E8] font-semibold text-[15px]" href="#">Terms of Service</a>
                         <a class="text-[#00A2E8] font-semibold text-[15px]" href="#">Privacy Policy</a>
                     </div>
+                    <p class="text-[13px] text-[#757575] font-medium tracking-tight">
+                        Contact our support:
+                        <a class="text-[#00A2E8]" href="mailto:masqitsolutions@gmail.com">masqitsolutions@gmail.com</a>
+                    </p>
                 </div>
             </footer>
         </main>

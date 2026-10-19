@@ -1097,7 +1097,7 @@ onMounted(() => {
                     </p>
                     <!-- Contact Information -->
                     <div class="space-y-1 text-gray-400">
-                        <p>Gathr@gmail.com</p>
+                        <p>masqitsolutions@gmail.com</p>
                         <p>08051564437 .07082263502</p>
                     </div>
                 </div>

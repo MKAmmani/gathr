@@ -151,6 +151,16 @@ provide('sidebarState', {
                         :style="isActiveRoute('/settings') ? 'font-variation-settings: \'FILL\' 1;' : ''">settings</span>
                     <span class="text-sm">Settings</span>
                 </Link>
+
+                <!-- Navigation Item: Admin Panel (if admin) -->
+                <Link v-if="props.user?.is_admin" href="/admin"
+                    class="flex items-center px-4 py-3 rounded-xl transition-all duration-150 mt-2"
+                    :class="isActiveRoute('/admin') ? 'bg-[#004D80] text-white font-semibold shadow-md' : 'text-[#004D80] bg-blue-50/70 hover:bg-blue-100 font-semibold'"
+                >
+                    <span class="material-symbols-outlined mr-4 text-xl" data-icon="admin_panel_settings"
+                        style="font-variation-settings: 'FILL' 1;">admin_panel_settings</span>
+                    <span class="text-sm">Admin Panel</span>
+                </Link>
             </nav>
 
             <!-- Footer Section: Logout -->
